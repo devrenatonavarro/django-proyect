@@ -5,6 +5,11 @@
 {% block page_title %}Mis Entregas Asignadas{% endblock %}
 
 {% block content %}
+<!-- Mensaje informativo -->
+<div class="alert alert-info mb-3">
+    <i class="bi bi-info-circle"></i> <strong>Instrucciones:</strong> Puedes ver pedidos listos para entrega y en ruta. Solo puedes marcar como "En Ruta" los pedidos que están listos. Una vez marcados, debes entregarlos al cliente.
+</div>
+
 <!-- Filtros de Ordenamiento -->
 <div class="card mb-3">
     <div class="card-body">
@@ -80,28 +85,26 @@
                 </ul>
 
                 <!-- Acciones rápidas -->
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-stretch">
                     {% if pedido.estado == 'LISTO_ENTREGA' %}
-                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-inline">
+                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="flex-grow-1">
                             {% csrf_token %}
                             <input type="hidden" name="estado" value="EN_RUTA">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary w-100 h-100">
                                 <i class="bi bi-truck"></i> Marcar En Ruta
                             </button>
                         </form>
+                        <a href="tel:{{ pedido.cliente.telefono }}" class="btn btn-outline-primary">
+                            <i class="bi bi-telephone"></i> Llamar
+                        </a>
                     {% elif pedido.estado == 'EN_RUTA' %}
-                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-inline">
-                            {% csrf_token %}
-                            <input type="hidden" name="estado" value="ENTREGADO">
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-circle"></i> Marcar Entregado
-                            </button>
-                        </form>
+                        <div class="alert alert-primary mb-0 flex-grow-1 d-flex align-items-center py-2">
+                            <i class="bi bi-truck me-2"></i> Este pedido ya está en ruta. Entrégalo al cliente y el cajero actualizará el estado.
+                        </div>
+                        <a href="tel:{{ pedido.cliente.telefono }}" class="btn btn-outline-primary">
+                            <i class="bi bi-telephone"></i> Llamar
+                        </a>
                     {% endif %}
-                    
-                    <a href="tel:{{ pedido.cliente.telefono }}" class="btn btn-outline-primary">
-                        <i class="bi bi-telephone"></i> Llamar Cliente
-                    </a>
                 </div>
             </div>
         </div>

@@ -14,6 +14,7 @@ urlpatterns = [
     path('carrito/eliminar/<int:detalle_id>/', views.eliminar_del_carrito, name='eliminar_del_carrito'),
     path('finalizar-compra/', views.finalizar_compra, name='finalizar_compra'),
     path('mis-pedidos/', views.mis_pedidos, name='mis_pedidos'),
+    path('perfil/', views.perfil, name='perfil'),
     
     # URLs de gestión interna (personal)
     path('admin/login/', views.admin_login, name='admin_login'),

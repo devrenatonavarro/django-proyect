@@ -5,7 +5,8 @@
 {% block page_title %}Gestionar Pedidos{% endblock %}
 
 {% block content %}
-<!-- Filtros -->
+<!-- Filtros (No mostrar para Cocina) -->
+{% if usuario.rol.nombre_rol != 'Cocina' %}
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
@@ -30,6 +31,11 @@
         </form>
     </div>
 </div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Mostrando pedidos en preparación y listos para entrega. Solo puedes cambiar el estado de los pedidos que están en preparación.
+</div>
+{% endif %}
 
 <!-- Lista de Pedidos -->
 {% if pedidos %}
@@ -93,23 +99,42 @@
                 <!-- Acciones -->
                 <div class="row g-2">
                     <!-- Cambiar Estado -->
-                    <div class="col-md-6">
-                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2">
-                            {% csrf_token %}
-                            <select name="estado" class="form-select form-select-sm" required>
-                                {% for codigo, nombre in estados %}
-                                    <option value="{{ codigo }}" {% if pedido.estado == codigo %}selected{% endif %}>
-                                        {{ nombre }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="bi bi-arrow-repeat"></i> Cambiar
-                            </button>
-                        </form>
+                    <div class="{% if usuario.rol.nombre_rol == 'Cocina' %}col-md-12{% else %}col-md-6{% endif %}">
+                        {% if usuario.rol.nombre_rol == 'Cocina' %}
+                            <!-- Cocina solo puede cambiar pedidos EN_PREPARACION -->
+                            {% if pedido.estado == 'EN_PREPARACION' %}
+                                <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="estado" value="LISTO_ENTREGA">
+                                    <button type="submit" class="btn btn-success flex-grow-1">
+                                        <i class="bi bi-check-circle"></i> Marcar como Listo para Entrega
+                                    </button>
+                                </form>
+                            {% else %}
+                                <!-- Ya está listo, solo mostrar estado -->
+                                <div class="alert alert-success mb-0">
+                                    <i class="bi bi-check-circle-fill"></i> Este pedido ya está listo para entrega
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2">
+                                {% csrf_token %}
+                                <select name="estado" class="form-select form-select-sm" required>
+                                    {% for codigo, nombre in estados %}
+                                        <option value="{{ codigo }}" {% if pedido.estado == codigo %}selected{% endif %}>
+                                            {{ nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-arrow-repeat"></i> Cambiar
+                                </button>
+                            </form>
+                        {% endif %}
                     </div>
 
-                    <!-- Asignar Repartidor -->
+                    <!-- Asignar Repartidor (No visible para Cocina) -->
+                    {% if usuario.rol.nombre_rol != 'Cocina' %}
                     <div class="col-md-5">
                         <form method="post" action="{% url 'admin_asignar_repartidor' pedido.id %}" class="d-flex gap-2">
                             {% csrf_token %}
@@ -127,6 +152,7 @@
                             </button>
                         </form>
                     </div>
+                    {% endif %}
 
                     <!-- Eliminar Pedido (Solo Admin) -->
                     {% if usuario.rol.nombre_rol == 'Admin' %}

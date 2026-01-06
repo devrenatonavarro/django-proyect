@@ -23,7 +23,10 @@ def admin_pedidos(request):
     
     pedidos = Pedido.objects.select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
-    if estado_filtro:
+    # Si es Cocina, ver pedidos EN_PREPARACION y LISTO_ENTREGA
+    if usuario.rol.nombre_rol == 'Cocina':
+        pedidos = pedidos.filter(estado__in=['EN_PREPARACION', 'LISTO_ENTREGA'])
+    elif estado_filtro:
         pedidos = pedidos.filter(estado=estado_filtro)
     
     pedidos = pedidos.order_by('-fecha_creacion')
@@ -48,8 +51,29 @@ def admin_cambiar_estado_pedido(request, pedido_id):
         return redirect('admin_login')
     
     if request.method == 'POST':
+        usuario = Usuario.objects.select_related('rol').get(id=request.session['usuario_id'])
         pedido = get_object_or_404(Pedido, id=pedido_id)
         nuevo_estado = request.POST.get('estado')
+        
+        # Validar permisos de Cocina
+        if usuario.rol.nombre_rol == 'Cocina':
+            # Cocina solo puede cambiar de EN_PREPARACION a LISTO_ENTREGA
+            if pedido.estado != 'EN_PREPARACION':
+                messages.error(request, 'Este pedido ya fue marcado como listo y no puede ser modificado')
+                return redirect('admin_pedidos')
+            if nuevo_estado != 'LISTO_ENTREGA':
+                messages.error(request, 'Solo puedes marcar el pedido como "Listo para entrega"')
+                return redirect('admin_pedidos')
+        
+        # Validar permisos de Repartidor
+        if usuario.rol.nombre_rol == 'Repartidores':
+            # Repartidor solo puede cambiar de LISTO_ENTREGA a EN_RUTA
+            if pedido.estado != 'LISTO_ENTREGA':
+                messages.error(request, 'Este pedido ya está en ruta y no puede ser modificado')
+                return redirect('admin_mis_entregas')
+            if nuevo_estado != 'EN_RUTA':
+                messages.error(request, 'Solo puedes marcar el pedido como "En Ruta"')
+                return redirect('admin_mis_entregas')
         
         if nuevo_estado in dict(Pedido.ESTADOS):
             pedido.estado = nuevo_estado

@@ -279,3 +279,70 @@ def mis_pedidos(request):
         'cliente_autenticado': True
     }
     return render(request, 'core/mis_pedidos.html', context)
+
+
+def perfil(request):
+    """Vista para ver y actualizar el perfil del cliente"""
+    if 'cliente_id' not in request.session:
+        messages.warning(request, 'Debes iniciar sesión para ver tu perfil')
+        return redirect('login')
+    
+    cliente = Cliente.objects.get(id=request.session['cliente_id'])
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        nombre = request.POST.get('nombre')
+        telefono = request.POST.get('telefono')
+        direccion = request.POST.get('direccion')
+        password_actual = request.POST.get('password_actual')
+        password_nuevo = request.POST.get('password_nuevo')
+        password_confirmar = request.POST.get('password_confirmar')
+        
+        # Validar y actualizar datos básicos
+        if nombre and telefono and direccion:
+            cliente.nombre = nombre
+            cliente.telefono = telefono
+            cliente.direccion = direccion
+            
+            # Si el usuario quiere cambiar la contraseña
+            if password_actual and password_nuevo and password_confirmar:
+                # Verificar que la contraseña actual es correcta
+                if not check_password(password_actual, cliente.password):
+                    messages.error(request, 'La contraseña actual es incorrecta')
+                    return redirect('perfil')
+                
+                # Verificar que las contraseñas nuevas coincidan
+                if password_nuevo != password_confirmar:
+                    messages.error(request, 'Las contraseñas nuevas no coinciden')
+                    return redirect('perfil')
+                
+                # Actualizar contraseña
+                cliente.password = make_password(password_nuevo)
+                messages.success(request, 'Perfil y contraseña actualizados exitosamente')
+            else:
+                messages.success(request, 'Perfil actualizado exitosamente')
+            
+            # Guardar cambios
+            cliente.save()
+            
+            # Actualizar el nombre en la sesión
+            request.session['cliente_nombre'] = cliente.nombre
+            
+            return redirect('perfil')
+        else:
+            messages.error(request, 'Todos los campos son obligatorios')
+    
+    # Obtener cantidad de items en el carrito
+    cantidad_carrito = 0
+    carrito = Carrito.objects.filter(cliente=cliente, activo=True).first()
+    if carrito:
+        cantidad_carrito = carrito.detalles.aggregate(
+            total=Sum('cantidad')
+        )['total'] or 0
+    
+    context = {
+        'cliente': cliente,
+        'cantidad_carrito': cantidad_carrito,
+        'cliente_autenticado': True
+    }
+    return render(request, 'core/perfil.html', context)

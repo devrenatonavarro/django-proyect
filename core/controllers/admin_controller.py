@@ -96,10 +96,10 @@ def admin_mis_entregas(request):
     # Obtener filtro de ordenamiento
     ordenar = request.GET.get('ordenar', 'fecha')
     
-    # Pedidos asignados al repartidor
+    # Repartidores ven pedidos LISTO_ENTREGA y EN_RUTA (sin asignación específica)
     pedidos = Pedido.objects.filter(
-        repartidor=usuario
-    ).select_related('cliente').prefetch_related('detalles__producto')
+        estado__in=['LISTO_ENTREGA', 'EN_RUTA']
+    ).select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
     # Aplicar ordenamiento
     if ordenar == 'fecha':

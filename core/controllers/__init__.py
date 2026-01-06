@@ -15,7 +15,8 @@ from .cliente_controller import (
     actualizar_cantidad_carrito,
     eliminar_del_carrito,
     finalizar_compra,
-    mis_pedidos
+    mis_pedidos,
+    perfil
 )
 
 from .admin_controller import (
@@ -61,6 +62,7 @@ __all__ = [
     'eliminar_del_carrito',
     'finalizar_compra',
     'mis_pedidos',
+    'perfil',
     
     # Admin views
     'admin_login',

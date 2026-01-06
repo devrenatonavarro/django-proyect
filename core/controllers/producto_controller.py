@@ -6,7 +6,6 @@ Vistas para gestión de productos del restaurante.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from core.models import Usuario, Producto
-import os
 
 
 def admin_productos(request):
@@ -82,10 +81,7 @@ def admin_editar_producto(request, producto_id):
         
         # Solo actualizar imagen si se sube una nueva
         if 'imagen' in request.FILES:
-            # Eliminar imagen anterior si existe
-            if producto.imagen:
-                if os.path.isfile(producto.imagen.path):
-                    os.remove(producto.imagen.path)
+            # Cloudinary maneja automáticamente la eliminación de archivos antiguos
             producto.imagen = request.FILES['imagen']
         
         producto.save()

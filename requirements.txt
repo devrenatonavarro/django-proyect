@@ -10,6 +10,8 @@ cryptography==46.0.3
 daphne==4.2.1
 dj-database-url==3.1.0
 Django==6.0
+django-cloudinary-storage==0.3.0
+cloudinary==1.36.0
 gunicorn==23.0.0
 hyperlink==21.0.0
 idna==3.11

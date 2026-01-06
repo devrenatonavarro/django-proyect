@@ -1,0 +1,179 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Gestionar Pedidos - Panel Administrativo{% endblock %}
+
+{% block page_title %}Gestionar Pedidos{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="estado" class="form-label">Filtrar por Estado</label>
+                <select name="estado" id="estado" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todos los estados</option>
+                    {% for codigo, nombre in estados %}
+                        <option value="{{ codigo }}" {% if estado_filtro == codigo %}selected{% endif %}>
+                            {{ nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if estado_filtro %}
+                <div class="col-md-2">
+                    <a href="{% url 'admin_pedidos' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Pedidos -->
+{% if pedidos %}
+    {% for pedido in pedidos %}
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <strong>{{ pedido.codigo_unico }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <i class="bi bi-person"></i> {{ pedido.cliente.nombre }}
+                    </div>
+                    <div class="col-md-2">
+                        <i class="bi bi-calendar"></i> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="col-md-2">
+                        <strong class="text-primary">S/ {{ pedido.total_venta }}</strong>
+                    </div>
+                    <div class="col-md-2">
+                        {% if pedido.estado == 'EN_PREPARACION' %}
+                            <span class="badge bg-warning text-dark">En Preparación</span>
+                        {% elif pedido.estado == 'LISTO_ENTREGA' %}
+                            <span class="badge bg-info">Listo</span>
+                        {% elif pedido.estado == 'EN_RUTA' %}
+                            <span class="badge bg-primary">En Ruta</span>
+                        {% elif pedido.estado == 'ENTREGADO' %}
+                            <span class="badge bg-success">Entregado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Productos del pedido -->
+                <h6 class="mb-3">Productos:</h6>
+                <ul class="list-group list-group-flush mb-3">
+                    {% for detalle in pedido.detalles.all %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>{{ detalle.cantidad }}x {{ detalle.producto.nombre }}</span>
+                            <span class="text-muted">S/ {{ detalle.subtotal }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <!-- Datos del cliente -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">Teléfono:</small> {{ pedido.cliente.telefono }}<br>
+                        <small class="text-muted">Dirección:</small> {{ pedido.cliente.direccion }}
+                    </div>
+                    <div class="col-md-6">
+                        {% if pedido.repartidor %}
+                            <small class="text-muted">Repartidor asignado:</small><br>
+                            <i class="bi bi-person-badge"></i> {{ pedido.repartidor.nombre }}
+                        {% else %}
+                            <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Sin repartidor asignado</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="row g-2">
+                    <!-- Cambiar Estado -->
+                    <div class="col-md-6">
+                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <select name="estado" class="form-select form-select-sm" required>
+                                {% for codigo, nombre in estados %}
+                                    <option value="{{ codigo }}" {% if pedido.estado == codigo %}selected{% endif %}>
+                                        {{ nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-arrow-repeat"></i> Cambiar
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Asignar Repartidor -->
+                    <div class="col-md-5">
+                        <form method="post" action="{% url 'admin_asignar_repartidor' pedido.id %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <select name="repartidor_id" class="form-select form-select-sm">
+                                <option value="">Sin repartidor</option>
+                                {% for repartidor in repartidores %}
+                                    <option value="{{ repartidor.id }}" 
+                                            {% if pedido.repartidor and pedido.repartidor.id == repartidor.id %}selected{% endif %}>
+                                        {{ repartidor.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-person-check"></i> Asignar
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Eliminar Pedido (Solo Admin) -->
+                    {% if usuario.rol.nombre_rol == 'Admin' %}
+                    <div class="col-md-1 d-flex">
+                        <button type="button" 
+                                class="btn btn-sm btn-danger d-flex align-items-center justify-content-center flex-grow-1"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#eliminarPedidoModal{{ pedido.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Eliminar Pedido -->
+        {% if usuario.rol.nombre_rol == 'Admin' %}
+        <div class="modal fade" id="eliminarPedidoModal{{ pedido.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">¿Estás seguro de que deseas eliminar el pedido <strong>{{ pedido.codigo_unico }}</strong>?</p>
+                        <p class="text-muted small mt-2">Esta acción eliminará el pedido y todos sus detalles de forma permanente.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                        <a href="{% url 'admin_eliminar_pedido' pedido.id %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar Pedido
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle"></i> No hay pedidos que mostrar
+    </div>
+{% endif %}
+{% endblock %}

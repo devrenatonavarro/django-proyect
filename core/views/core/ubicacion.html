@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Encuéntranos - Mama Neme{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Encabezado -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="bi bi-geo-alt-fill text-primary"></i> Encuéntranos
+            </h1>
+            <p class="lead text-muted">Visítanos en nuestra ubicación</p>
+        </div>
+    </div>
+
+    <!-- Información de Contacto -->
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-info-circle text-primary"></i> Información
+                    </h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                            <strong>Dirección:</strong><br>
+                            <span class="ms-4 text-muted">Brosteria Mama Neme</span>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-telephone text-primary"></i>
+                            <strong>Teléfono:</strong><br>
+                            <span class="ms-4 text-muted">Contáctanos para más información</span>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-clock text-primary"></i>
+                            <strong>Horario:</strong><br>
+                            <span class="ms-4 text-muted">Lunes a Domingo</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-chat-dots text-primary"></i> ¿Cómo llegar?
+                    </h4>
+                    <p class="text-muted">
+                        Estamos ubicados en una zona accesible para que puedas visitarnos fácilmente. 
+                        Usa el mapa interactivo para obtener direcciones desde tu ubicación.
+                    </p>
+                    <a href="https://www.google.com/maps/place/Brosteria+Mama+Neme" 
+                       target="_blank" 
+                       class="btn btn-primary mt-3">
+                        <i class="bi bi-map"></i> Abrir en Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa de Google -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7793.559535133305!2d-74.87394279209327!3d-12.397671285827142!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x910dd3daffa0537d%3A0x9d4a696a1893e7!2sBrosteria%20Mama%20Neme!5e0!3m2!1ses-419!2spe!4v1767697550301!5m2!1ses-419!2spe" 
+                            width="100%" 
+                            height="500" 
+                            style="border:0; border-radius: 8px;" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

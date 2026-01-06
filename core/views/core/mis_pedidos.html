@@ -1,0 +1,406 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mis Pedidos - Mama Neme{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1">
+                <i class="bi bi-receipt-cutoff"></i> Mis Pedidos
+            </h2>
+            <p class="text-muted small">Seguimiento en tiempo real de tus pedidos</p>
+        </div>
+    </div>
+
+    {% if pedidos %}
+        <div class="row" id="pedidos-container">
+            {% for pedido in pedidos %}
+                <div class="col-12 mb-4" data-pedido-id="{{ pedido.id }}" data-pedido-estado="{{ pedido.estado }}">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-receipt"></i> {{ pedido.codigo_unico }}
+                                    </h5>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <small><i class="bi bi-calendar3"></i> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-cash-coin"></i> S/ {{ pedido.total_venta }}
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body p-4">
+                            <!-- Timeline Stepper de Estados -->
+                            <div class="timeline-stepper mb-4">
+                                <div class="stepper-wrapper">
+                                    <div class="stepper-item {% if pedido.estado == 'EN_PREPARACION' or pedido.estado == 'LISTO_ENTREGA' or pedido.estado == 'EN_RUTA' or pedido.estado == 'ENTREGADO' %}completed{% endif %} {% if pedido.estado == 'EN_PREPARACION' %}active{% endif %}">
+                                        <div class="step-counter">
+                                            <i class="bi bi-egg-fried"></i>
+                                        </div>
+                                        <div class="step-name">Preparando</div>
+                                    </div>
+                                    
+                                    <div class="stepper-item {% if pedido.estado == 'LISTO_ENTREGA' or pedido.estado == 'EN_RUTA' or pedido.estado == 'ENTREGADO' %}completed{% endif %} {% if pedido.estado == 'LISTO_ENTREGA' %}active{% endif %}">
+                                        <div class="step-counter">
+                                            <i class="bi bi-check2-circle"></i>
+                                        </div>
+                                        <div class="step-name">Listo</div>
+                                    </div>
+                                    
+                                    <div class="stepper-item {% if pedido.estado == 'EN_RUTA' or pedido.estado == 'ENTREGADO' %}completed{% endif %} {% if pedido.estado == 'EN_RUTA' %}active{% endif %}">
+                                        <div class="step-counter">
+                                            <i class="bi bi-truck"></i>
+                                        </div>
+                                        <div class="step-name">En Camino</div>
+                                    </div>
+                                    
+                                    <div class="stepper-item {% if pedido.estado == 'ENTREGADO' %}completed active{% endif %}">
+                                        <div class="step-counter">
+                                            <i class="bi bi-house-check"></i>
+                                        </div>
+                                        <div class="step-name">Entregado</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Productos -->
+                            <h6 class="mb-3 text-uppercase fw-bold" style="font-size: 0.9rem; letter-spacing: 0.5px; color: #6c757d;">
+                                <i class="bi bi-bag-check-fill"></i> Productos
+                            </h6>
+                            <div class="productos-list mb-3">
+                                {% for detalle in pedido.detalles.all %}
+                                    <div class="producto-item d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                                        <div class="d-flex align-items-center flex-grow-1">
+                                            <div class="producto-icon bg-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 50px; height: 50px; min-width: 50px;">
+                                                <i class="bi bi-cart3 text-primary fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">
+                                                    {% if detalle.producto %}
+                                                        {{ detalle.producto.nombre }}
+                                                    {% else %}
+                                                        {{ detalle.producto_nombre }}
+                                                    {% endif %}
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <span class="badge bg-primary">{{ detalle.cantidad }}x</span>
+                                                    S/ {{ detalle.precio_unitario }} c/u
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <h6 class="mb-0 text-primary fw-bold">S/ {{ detalle.subtotal }}</h6>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Info adicional -->
+                            <div class="row mt-4">
+                                {% if pedido.repartidor %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="alert alert-info mb-0 border-0 d-flex align-items-center" style="background-color: #e7f3ff;">
+                                            <i class="bi bi-person-badge-fill fs-4 me-2"></i>
+                                            <div>
+                                                <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">Repartidor</small>
+                                                <strong>{{ pedido.repartidor.nombre }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {% if pedido.fecha_entrega %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="alert alert-success mb-0 border-0 d-flex align-items-center" style="background-color: #d4edda;">
+                                            <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                                            <div>
+                                                <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">Entregado</small>
+                                                <strong>{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0 text-center py-5">
+                    <div class="card-body">
+                        <i class="bi bi-inbox display-1 text-muted mb-3" style="font-size: 5rem;"></i>
+                        <h4 class="text-muted">No tienes pedidos aún</h4>
+                        <p class="text-muted">Explora nuestro menú y realiza tu primer pedido</p>
+                        <a href="{% url 'index' %}" class="btn btn-primary mt-3 px-4 py-2">
+                            <i class="bi bi-arrow-left"></i> Ver Menú
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Stepper Styles */
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin: 30px 0;
+    }
+    
+    .stepper-item {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+    
+    .stepper-item:not(:last-child):after {
+        content: '';
+        position: absolute;
+        border-bottom: 3px solid #e0e0e0;
+        width: 100%;
+        top: 25px;
+        left: 50%;
+        z-index: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .stepper-item.completed:not(:last-child):after {
+        border-bottom: 3px solid #28a745;
+    }
+    
+    .stepper-item.active:not(:last-child):after {
+        border-bottom: 3px solid #ffc107;
+        animation: lineGrow 1s ease-in-out;
+    }
+    
+    @keyframes lineGrow {
+        from { width: 0; }
+        to { width: 100%; }
+    }
+    
+    .step-counter {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        color: #9e9e9e;
+        font-size: 1.4rem;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .stepper-item.completed .step-counter {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        transform: scale(1.05);
+    }
+    
+    .stepper-item.active .step-counter {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.5);
+        animation: pulse 2s infinite;
+        transform: scale(1.1);
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.5);
+        }
+        50% {
+            box-shadow: 0 4px 25px rgba(255, 193, 7, 0.8);
+        }
+    }
+    
+    .step-name {
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #9e9e9e;
+        margin-top: 5px;
+    }
+    
+    .stepper-item.completed .step-name {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .stepper-item.active .step-name {
+        color: #ff9800;
+        font-weight: 700;
+    }
+
+    /* Producto Item Styles */
+    .producto-item {
+        transition: all 0.3s ease;
+    }
+
+    .producto-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Card Animation */
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+
+    /* Animación de actualización */
+    .pedido-actualizado {
+        animation: highlight 1.5s ease-in-out;
+    }
+
+    @keyframes highlight {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
+        }
+    }
+</style>
+
+<script>
+// WebSocket para actualizaciones en tiempo real
+let pedidoSocket = null;
+const clienteId = '{{ request.session.cliente_id }}';
+
+function conectarWebSocket() {
+    if (!clienteId) return;
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/pedidos/${clienteId}/`;
+    
+    pedidoSocket = new WebSocket(wsUrl);
+    
+    pedidoSocket.onopen = function(e) {
+        console.log('✅ Conexión WebSocket establecida');
+    };
+    
+    pedidoSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        
+        if (data.type === 'pedido_actualizado') {
+            actualizarPedido(data.pedido_id);
+        }
+    };
+    
+    pedidoSocket.onclose = function(e) {
+        console.log('🔌 Conexión WebSocket cerrada. Reconectando en 3 segundos...');
+        setTimeout(conectarWebSocket, 3000);
+    };
+    
+    pedidoSocket.onerror = function(error) {
+        console.error('❌ Error en WebSocket:', error);
+    };
+}
+
+function actualizarPedido(pedidoId) {
+    // Hacer fetch para obtener la vista actualizada del pedido
+    fetch(window.location.href, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const nuevoPedidoElement = doc.querySelector(`[data-pedido-id="${pedidoId}"]`);
+        
+        if (nuevoPedidoElement) {
+            const pedidoActual = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+            if (pedidoActual) {
+                pedidoActual.outerHTML = nuevoPedidoElement.outerHTML;
+                
+                // Añadir animación de actualización
+                const pedidoActualizado = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+                pedidoActualizado.classList.add('pedido-actualizado');
+                setTimeout(() => {
+                    pedidoActualizado.classList.remove('pedido-actualizado');
+                }, 1500);
+                
+                // Mostrar notificación
+                mostrarNotificacion('🎉 ¡Tu pedido ha sido actualizado!');
+            }
+        }
+    })
+    .catch(error => console.error('Error al actualizar pedido:', error));
+}
+
+function mostrarNotificacion(mensaje) {
+    // Verificar si el navegador soporta notificaciones
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Mama Neme', {
+            body: mensaje,
+            icon: '/static/icon.png'
+        });
+    }
+    
+    // Toast visual
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show align-items-center text-white bg-success border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle-fill"></i> ${mensaje}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.parentElement.remove()"></button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Iniciar WebSocket si hay pedidos
+if (document.getElementById('pedidos-container')) {
+    conectarWebSocket();
+    
+    // Limpiar conexión al salir de la página
+    window.addEventListener('beforeunload', () => {
+        if (pedidoSocket) {
+            pedidoSocket.close();
+        }
+    });
+    
+    // Solicitar permiso para notificaciones
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,209 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Reportes de Ventas - Panel Administrativo{% endblock %}
+
+{% block page_title %}Reportes de Ventas{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+            </div>
+            <div class="col-md-4">
+                <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                {% if fecha_inicio or fecha_fin %}
+                    <a href="{% url 'admin_reportes_ventas' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resumen -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cash-stack"></i> Total Ventas</h5>
+                <h2 class="mb-0">S/ {{ total_ventas }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-receipt"></i> Total Pedidos</h5>
+                <h2 class="mb-0">{{ cantidad_pedidos }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Ventas -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-table"></i> Detalle de Ventas</h5>
+    </div>
+    <div class="card-body">
+        {% if ventas %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Cliente</th>
+                            <th>Repartidor</th>
+                            <th>Fecha Entrega</th>
+                            <th>Total</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venta in ventas %}
+                            <tr>
+                                <td><strong>{{ venta.codigo_unico }}</strong></td>
+                                <td>
+                                    <i class="bi bi-person"></i> {{ venta.cliente.nombre }}<br>
+                                    <small class="text-muted">{{ venta.cliente.telefono }}</small>
+                                </td>
+                                <td>
+                                    {% if venta.repartidor %}
+                                        <i class="bi bi-person-badge"></i> {{ venta.repartidor.nombre }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ venta.fecha_entrega|date:"d/m/Y H:i" }}</td>
+                                <td><strong class="text-success">S/ {{ venta.total_venta }}</strong></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#detalles{{ venta.id }}">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="detalles{{ venta.id }}">
+                                <td colspan="6">
+                                    <div class="card card-body bg-light">
+                                        <h6>Productos del Pedido:</h6>
+                                        <ul class="list-group list-group-flush">
+                                            {% for detalle in venta.detalles.all %}
+                                                <li class="list-group-item d-flex justify-content-between">
+                                                    <span>{{ detalle.cantidad }}x {{ detalle.producto_nombre }}</span>
+                                                    <span>S/ {{ detalle.subtotal }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                        <div class="mt-2">
+                                            <strong>Dirección de entrega:</strong> {{ venta.cliente.direccion }}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="4" class="text-end">TOTAL:</th>
+                            <th><strong class="text-success">S/ {{ total_ventas }}</strong></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle"></i> No hay ventas registradas en el período seleccionado
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Conectar WebSocket para notificaciones de ventas en tiempo real
+const usuarioId = '{{ usuario.id }}';
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const wsUrl = `${protocol}//${window.location.host}/ws/ventas/${usuarioId}/`;
+let ventasSocket = new WebSocket(wsUrl);
+
+ventasSocket.onopen = function(e) {
+    console.log('Conectado a notificaciones de ventas');
+};
+
+ventasSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    
+    if (data.type === 'venta_realizada') {
+        // Mostrar notificación visual
+        mostrarNotificacionVenta(data);
+        
+        // Notificación del navegador
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Nueva Venta Registrada', {
+                body: `Pedido ${data.codigo_unico} entregado - S/ ${data.total}`,
+                icon: '/media/logo.jpg'
+            });
+        }
+    }
+};
+
+ventasSocket.onclose = function(e) {
+    console.log('Desconectado de notificaciones de ventas');
+    // Reconectar después de 3 segundos
+    setTimeout(() => {
+        ventasSocket = new WebSocket(wsUrl);
+    }, 3000);
+};
+
+ventasSocket.onerror = function(error) {
+    console.error('Error en WebSocket:', error);
+};
+
+function mostrarNotificacionVenta(data) {
+    // Crear alerta Bootstrap
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '400px';
+    alertDiv.innerHTML = `
+        <strong><i class="bi bi-check-circle"></i> Nueva Venta Registrada</strong><br>
+        Pedido: ${data.codigo_unico}<br>
+        Monto: S/ ${data.total}<br>
+        Repartidor: ${data.repartidor}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Remover después de 5 segundos
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// Solicitar permiso para notificaciones
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+}
+
+// Limpiar conexión al salir
+window.addEventListener('beforeunload', () => {
+    if (ventasSocket) {
+        ventasSocket.close();
+    }
+});
+</script>
+{% endblock %}

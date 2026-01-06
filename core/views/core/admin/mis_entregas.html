@@ -1,0 +1,114 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Mis Entregas - Panel Administrativo{% endblock %}
+
+{% block page_title %}Mis Entregas Asignadas{% endblock %}
+
+{% block content %}
+<!-- Filtros de Ordenamiento -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <label class="form-label">Ordenar por:</label>
+            </div>
+            <div class="col-md-9">
+                <div class="btn-group" role="group">
+                    <a href="?ordenar=fecha" class="btn btn-sm {% if ordenar == 'fecha' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="bi bi-calendar"></i> Fecha
+                    </a>
+                    <a href="?ordenar=estado" class="btn btn-sm {% if ordenar == 'estado' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="bi bi-list-check"></i> Prioridad
+                    </a>
+                    <a href="?ordenar=total" class="btn btn-sm {% if ordenar == 'total' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        <i class="bi bi-cash"></i> Monto
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if pedidos %}
+    {% for pedido in pedidos %}
+        <div class="card mb-3">
+            <div class="card-header bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <h5 class="mb-0">{{ pedido.codigo_unico }}</h5>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="bi bi-calendar"></i> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        {% if pedido.estado == 'EN_PREPARACION' %}
+                            <span class="badge bg-warning text-dark">En Preparación</span>
+                        {% elif pedido.estado == 'LISTO_ENTREGA' %}
+                            <span class="badge bg-info">Listo para Entrega</span>
+                        {% elif pedido.estado == 'EN_RUTA' %}
+                            <span class="badge bg-primary">En Ruta</span>
+                        {% elif pedido.estado == 'ENTREGADO' %}
+                            <span class="badge bg-success">Entregado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Información del Cliente -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-person-circle"></i> Cliente</h6>
+                        <p class="mb-1"><strong>{{ pedido.cliente.nombre }}</strong></p>
+                        <p class="mb-1"><i class="bi bi-telephone"></i> {{ pedido.cliente.telefono }}</p>
+                        <p class="mb-0"><i class="bi bi-geo-alt"></i> {{ pedido.cliente.direccion }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-box-seam"></i> Total del Pedido</h6>
+                        <h3 class="text-primary mb-0">S/ {{ pedido.total_venta }}</h3>
+                    </div>
+                </div>
+
+                <!-- Productos -->
+                <h6 class="mb-2">Productos:</h6>
+                <ul class="list-group list-group-flush mb-3">
+                    {% for detalle in pedido.detalles.all %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>{{ detalle.cantidad }}x {{ detalle.producto.nombre }}</span>
+                            <span>S/ {{ detalle.subtotal }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <!-- Acciones rápidas -->
+                <div class="d-flex gap-2">
+                    {% if pedido.estado == 'LISTO_ENTREGA' %}
+                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="estado" value="EN_RUTA">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-truck"></i> Marcar En Ruta
+                            </button>
+                        </form>
+                    {% elif pedido.estado == 'EN_RUTA' %}
+                        <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="estado" value="ENTREGADO">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Marcar Entregado
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    <a href="tel:{{ pedido.cliente.telefono }}" class="btn btn-outline-primary">
+                        <i class="bi bi-telephone"></i> Llamar Cliente
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle"></i> No tienes entregas asignadas actualmente
+    </div>
+{% endif %}
+{% endblock %}

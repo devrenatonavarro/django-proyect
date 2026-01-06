@@ -1,4 +1,11 @@
 # Script para crear roles y usuarios del personal
+import os
+import django
+
+# Configurar Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'restaurante.settings')
+django.setup()
+
 from core.models import Rol, Usuario
 from django.contrib.auth.hashers import make_password
 

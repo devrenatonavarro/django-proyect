@@ -1,4 +1,11 @@
 # Script para crear datos de ejemplo
+import os
+import django
+
+# Configurar Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'restaurante.settings')
+django.setup()
+
 from core.models import Producto
 
 # Crear productos de ejemplo

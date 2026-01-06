@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -53,7 +54,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'index' %}">
-                <img src="/media/logo.jpg" alt="Mama Neme" style="height: 40px; margin-right: 10px; border-radius: 5px;">
+                <img src="{% static 'logo.jpg' %}" alt="Mama Neme" style="height: 40px; margin-right: 10px; border-radius: 5px;">
                 Mama Neme
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

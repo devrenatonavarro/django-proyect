@@ -1,4 +1,5 @@
 {% extends 'core/admin/base.html' %}
+{% load static %}
 
 {% block title %}Reportes de Ventas - Panel Administrativo{% endblock %}
 
@@ -154,7 +155,7 @@ ventasSocket.onmessage = function(e) {
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('Nueva Venta Registrada', {
                 body: `Pedido ${data.codigo_unico} entregado - S/ ${data.total}`,
-                icon: '/media/logo.jpg'
+                icon: '{% static "logo.jpg" %}'
             });
         }
     }

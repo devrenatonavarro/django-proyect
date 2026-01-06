@@ -27,6 +27,7 @@ class Pedido(models.Model):
         ('LISTO_ENTREGA', 'Listo para entrega'),
         ('EN_RUTA', 'En ruta'),
         ('ENTREGADO', 'Entregado'),
+        ('NO_ENTREGADO', 'No entregado'),
     ]
 
     codigo_unico = models.CharField(max_length=50, unique=True, editable=False)

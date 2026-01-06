@@ -64,6 +64,8 @@
                             <span class="badge bg-primary">En Ruta</span>
                         {% elif pedido.estado == 'ENTREGADO' %}
                             <span class="badge bg-success">Entregado</span>
+                        {% elif pedido.estado == 'NO_ENTREGADO' %}
+                            <span class="badge bg-danger">No Entregado</span>
                         {% endif %}
                     </div>
                 </div>

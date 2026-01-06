@@ -96,9 +96,12 @@ def admin_mis_entregas(request):
     # Obtener filtro de ordenamiento
     ordenar = request.GET.get('ordenar', 'fecha')
     
-    # Repartidores ven pedidos LISTO_ENTREGA y EN_RUTA (sin asignación específica)
+    # Repartidores ven:
+    # - Todos los pedidos LISTO_ENTREGA (disponibles para tomar)
+    # - Solo sus pedidos EN_RUTA asignados
+    from django.db.models import Q
     pedidos = Pedido.objects.filter(
-        estado__in=['LISTO_ENTREGA', 'EN_RUTA']
+        Q(estado='LISTO_ENTREGA') | Q(estado='EN_RUTA', repartidor=usuario)
     ).select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
     # Aplicar ordenamiento

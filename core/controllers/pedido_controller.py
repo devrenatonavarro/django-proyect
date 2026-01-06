@@ -67,12 +67,17 @@ def admin_cambiar_estado_pedido(request, pedido_id):
         
         # Validar permisos de Repartidor
         if usuario.rol.nombre_rol == 'Repartidores':
-            # Repartidor solo puede cambiar de LISTO_ENTREGA a EN_RUTA
-            if pedido.estado != 'LISTO_ENTREGA':
-                messages.error(request, 'Este pedido ya está en ruta y no puede ser modificado')
-                return redirect('admin_mis_entregas')
-            if nuevo_estado != 'EN_RUTA':
-                messages.error(request, 'Solo puedes marcar el pedido como "En Ruta"')
+            # Validar transiciones permitidas
+            if pedido.estado == 'LISTO_ENTREGA' and nuevo_estado == 'EN_RUTA':
+                # Asignar el repartidor automáticamente
+                pedido.repartidor = usuario
+            elif pedido.estado == 'EN_RUTA' and nuevo_estado in ['ENTREGADO', 'NO_ENTREGADO']:
+                # Verificar que el pedido esté asignado a este repartidor
+                if pedido.repartidor != usuario:
+                    messages.error(request, 'Este pedido no está asignado a ti')
+                    return redirect('admin_mis_entregas')
+            else:
+                messages.error(request, 'Transición de estado no permitida')
                 return redirect('admin_mis_entregas')
         
         if nuevo_estado in dict(Pedido.ESTADOS):
@@ -118,7 +123,11 @@ def admin_cambiar_estado_pedido(request, pedido_id):
         else:
             messages.error(request, 'Estado inválido')
     
-    return redirect('admin_pedidos')
+    # Redirigir según el rol del usuario
+    if usuario.rol.nombre_rol == 'Repartidores':
+        return redirect('admin_mis_entregas')
+    else:
+        return redirect('admin_pedidos')
 
 
 def admin_asignar_repartidor(request, pedido_id):

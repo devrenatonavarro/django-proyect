@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
 from django.db.models import Sum
-from core.models import Cliente, Producto, Carrito, DetalleCarrito, Pedido, DetallePedido
+from core.models import Cliente, Categoria, Producto, Carrito, DetalleCarrito, Pedido, DetallePedido
 from decimal import Decimal
 
 
@@ -31,8 +31,21 @@ def ubicacion(request):
 
 
 def index(request):
-    """Vista principal: muestra productos disponibles"""
-    productos = Producto.objects.filter(activo=True, eliminado=False)
+    """Vista principal: muestra categorías y productos disponibles"""
+    # Obtener categorías activas con sus productos
+    categorias = Categoria.objects.filter(activo=True).prefetch_related(
+        'productos'
+    ).order_by('nombre')
+    
+    # Enriquecer cada categoría con sus productos
+    categorias_con_productos = []
+    for categoria in categorias:
+        productos = categoria.productos.filter(activo=True, eliminado=False).order_by('nombre')
+        if productos.exists():
+            categorias_con_productos.append({
+                'categoria': categoria,
+                'productos': productos
+            })
     
     # Obtener cantidad de items en el carrito si hay sesión
     cantidad_carrito = 0
@@ -45,7 +58,7 @@ def index(request):
             )['total'] or 0
     
     context = {
-        'productos': productos,
+        'categorias_con_productos': categorias_con_productos,
         'cantidad_carrito': cantidad_carrito,
         'cliente_autenticado': 'cliente_id' in request.session
     }

@@ -1,0 +1,226 @@
+{% extends 'core/admin/base.html' %}
+
+{% block title %}Gestión de Categorías - Mama Neme{% endblock %}
+
+{% block page_title %}Gestión de Categorías{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Botón para crear nueva categoría -->
+    <div class="mb-4">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearCategoriaModal">
+            <i class="bi bi-plus-circle"></i> Nueva Categoría
+        </button>
+    </div>
+
+    <!-- Tabla de categorías -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-collection"></i> Lista de Categorías</h5>
+        </div>
+        <div class="card-body">
+            {% if categorias %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Productos</th>
+                                <th>Estado</th>
+                                <th>Fecha de Creación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for categoria in categorias %}
+                                <tr>
+                                    <td>{{ categoria.id }}</td>
+                                    <td><strong>{{ categoria.nombre }}</strong></td>
+                                    <td>{{ categoria.descripcion|default:"Sin descripción"|truncatewords:10 }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ categoria.total_productos }} producto{{ categoria.total_productos|pluralize }}</span>
+                                    </td>
+                                    <td>
+                                        {% if categoria.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ categoria.fecha_creacion|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- Botón Editar -->
+                                            <button type="button" 
+                                                    class="btn btn-outline-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editarCategoriaModal{{ categoria.id }}"
+                                                    title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            
+                                            <!-- Botón Activar/Desactivar -->
+                                            {% if categoria.nombre != 'Todos' %}
+                                                <a href="{% url 'admin_toggle_categoria' categoria.id %}" 
+                                                   class="btn btn-outline-{% if categoria.activo %}warning{% else %}success{% endif %}"
+                                                   onclick="return confirm('¿Estás seguro de {% if categoria.activo %}desactivar{% else %}activar{% endif %} esta categoría?')"
+                                                   title="{% if categoria.activo %}Desactivar{% else %}Activar{% endif %}">
+                                                    <i class="bi bi-{% if categoria.activo %}dash-circle{% else %}check-circle{% endif %}"></i>
+                                                </a>
+                                            {% endif %}
+                                            
+                                            <!-- Botón Eliminar -->
+                                            {% if categoria.nombre != 'Todos' %}
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#eliminarCategoriaModal{{ categoria.id }}"
+                                                        title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal Editar Categoría -->
+                                <div class="modal fade" id="editarCategoriaModal{{ categoria.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form method="post" action="{% url 'admin_editar_categoria' categoria.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Editar Categoría</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="nombre{{ categoria.id }}" class="form-label">Nombre *</label>
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               id="nombre{{ categoria.id }}" 
+                                                               name="nombre" 
+                                                               value="{{ categoria.nombre }}"
+                                                               required
+                                                               {% if categoria.nombre == 'Todos' %}readonly{% endif %}>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="descripcion{{ categoria.id }}" class="form-label">Descripción</label>
+                                                        <textarea class="form-control" 
+                                                                  id="descripcion{{ categoria.id }}" 
+                                                                  name="descripcion" 
+                                                                  rows="3">{{ categoria.descripcion }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Eliminar Categoría -->
+                                <div class="modal fade" id="eliminarCategoriaModal{{ categoria.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content border-0 shadow-lg">
+                                            <div class="modal-header bg-danger text-white border-0">
+                                                <h5 class="modal-title fw-bold">
+                                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                    Confirmar Eliminación
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="text-center mb-3">
+                                                    <i class="bi bi-trash3-fill text-danger" style="font-size: 4rem;"></i>
+                                                </div>
+                                                <h5 class="text-center mb-3">¿Estás seguro de eliminar esta categoría?</h5>
+                                                <div class="alert alert-warning border-0" role="alert">
+                                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                                    <strong>Categoría:</strong> {{ categoria.nombre }}
+                                                </div>
+                                                {% if categoria.total_productos > 0 %}
+                                                    <div class="alert alert-danger border-0" role="alert">
+                                                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                                                        Esta categoría tiene <strong>{{ categoria.total_productos }} producto(s)</strong> asociado(s). 
+                                                        No se puede eliminar hasta que reasignes los productos a otra categoría.
+                                                    </div>
+                                                {% else %}
+                                                    <p class="text-muted text-center mb-0">
+                                                        <i class="bi bi-shield-exclamation me-1"></i>
+                                                        Esta acción no se puede deshacer.
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer border-0 bg-light">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                                                </button>
+                                                {% if categoria.total_productos == 0 %}
+                                                    <a href="{% url 'admin_eliminar_categoria' categoria.id %}" class="btn btn-danger">
+                                                        <i class="bi bi-trash3 me-1"></i> Sí, Eliminar
+                                                    </a>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-danger" disabled>
+                                                        <i class="bi bi-lock-fill me-1"></i> No se puede eliminar
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle"></i> No hay categorías registradas aún.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Categoría -->
+<div class="modal fade" id="crearCategoriaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'admin_crear_categoria' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Categoría</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="nombre" 
+                               name="nombre" 
+                               placeholder="Ej: Entradas, Platos principales, Bebidas"
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" 
+                                  id="descripcion" 
+                                  name="descripcion" 
+                                  rows="3"
+                                  placeholder="Descripción opcional de la categoría"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Categoría</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

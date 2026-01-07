@@ -5,7 +5,7 @@ Vistas para gestión de productos del restaurante.
 """
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from core.models import Usuario, Producto
+from core.models import Usuario, Categoria, Producto
 
 
 def admin_productos(request):
@@ -20,11 +20,13 @@ def admin_productos(request):
         messages.error(request, 'Acceso denegado')
         return redirect('admin_dashboard')
     
-    productos = Producto.objects.filter(eliminado=False).order_by('-fecha_creacion')
+    productos = Producto.objects.filter(eliminado=False).select_related('categoria').order_by('-fecha_creacion')
+    categorias = Categoria.objects.filter(activo=True).order_by('nombre')
     
     context = {
         'usuario': usuario,
         'productos': productos,
+        'categorias': categorias,
     }
     
     return render(request, 'core/admin/productos.html', context)
@@ -46,12 +48,22 @@ def admin_crear_producto(request):
         descripcion = request.POST.get('descripcion')
         precio = request.POST.get('precio')
         imagen = request.FILES.get('imagen')
+        categoria_id = request.POST.get('categoria')
+        
+        # Si no se proporciona categoría, asignar a "Todos"
+        if not categoria_id:
+            categoria_todos = Categoria.objects.get_or_create(
+                nombre='Todos',
+                defaults={'descripcion': 'Categoría por defecto', 'activo': True}
+            )[0]
+            categoria_id = categoria_todos.id
         
         producto = Producto.objects.create(
             nombre=nombre,
             descripcion=descripcion,
             precio=precio,
             imagen=imagen,
+            categoria_id=categoria_id,
             activo=True
         )
         
@@ -78,6 +90,11 @@ def admin_editar_producto(request, producto_id):
         producto.nombre = request.POST.get('nombre')
         producto.descripcion = request.POST.get('descripcion')
         producto.precio = request.POST.get('precio')
+        
+        # Actualizar categoría
+        categoria_id = request.POST.get('categoria')
+        if categoria_id:
+            producto.categoria_id = categoria_id
         
         # Solo actualizar imagen si se sube una nueva
         if 'imagen' in request.FILES:

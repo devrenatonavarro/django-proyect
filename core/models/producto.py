@@ -11,6 +11,7 @@ import uuid
 import hashlib
 import io
 from .utils import producto_imagen_path
+from .categoria import Categoria
 
 
 class Producto(models.Model):
@@ -19,11 +20,13 @@ class Producto(models.Model):
     El campo 'activo' permite desactivar productos sin eliminarlos.
     El campo 'eliminado' permite soft delete (mantener histórico).
     Las imágenes se convierten automáticamente a WebP con nombres hash únicos.
+    Cada producto está obligatoriamente asignado a una categoría.
     """
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField()
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     imagen = models.ImageField(upload_to=producto_imagen_path, blank=True, null=True)
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name='productos')
     activo = models.BooleanField(default=True)
     eliminado = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)

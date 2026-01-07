@@ -49,6 +49,14 @@ from .usuario_controller import (
     admin_eliminar_usuario
 )
 
+from .categoria_controller import (
+    admin_categorias,
+    admin_crear_categoria,
+    admin_editar_categoria,
+    admin_eliminar_categoria,
+    admin_toggle_categoria
+)
+
 __all__ = [
     # Cliente views
     'index',
@@ -89,4 +97,11 @@ __all__ = [
     'admin_crear_usuario',
     'admin_editar_usuario',
     'admin_eliminar_usuario',
+    
+    # Categoria views
+    'admin_categorias',
+    'admin_crear_categoria',
+    'admin_editar_categoria',
+    'admin_eliminar_categoria',
+    'admin_toggle_categoria',
 ]

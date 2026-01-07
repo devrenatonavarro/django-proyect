@@ -105,6 +105,18 @@
                         <i class="bi bi-box-seam"></i> Productos
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if usuario.rol.nombre_rol == 'Admin' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_categorias' %}active{% endif %}" 
+                       href="{% url 'admin_categorias' %}">
+                        <i class="bi bi-collection"></i> Categorías
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if usuario.rol.nombre_rol == 'Admin' or usuario.rol.nombre_rol == 'Encargados' %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'admin_usuarios' %}active{% endif %}" 
                        href="{% url 'admin_usuarios' %}">

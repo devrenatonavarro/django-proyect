@@ -83,12 +83,30 @@ TEMPLATES = [
 WSGI_APPLICATION = 'restaurante.wsgi.application'
 ASGI_APPLICATION = 'restaurante.asgi.application'
 
-# Channels
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+# Channels - Configuración mejorada para producción
+REDIS_URL = config('REDIS_URL', default=None)
+
+if REDIS_URL:
+    # Usar Redis en producción (si está disponible)
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                "hosts": [REDIS_URL],
+            },
+        },
     }
-}
+else:
+    # Usar InMemory solo en desarrollo local
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+            'CONFIG': {
+                'capacity': 100,
+                'expiry': 60,
+            }
+        }
+    }
 
 
 # Database

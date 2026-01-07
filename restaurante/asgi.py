@@ -9,17 +9,25 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
 
 import os
 from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-import core.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'restaurante.settings')
 
+# Inicializar Django ASGI application early para asegurar AppRegistry
+django_asgi_app = get_asgi_application()
+
+# Importar después de inicializar Django
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from channels.security.websocket import AllowedHostsOriginValidator
+import core.routing
+
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
-        URLRouter(
-            core.routing.websocket_urlpatterns
+    "http": django_asgi_app,
+    "websocket": AllowedHostsOriginValidator(
+        AuthMiddlewareStack(
+            URLRouter(
+                core.routing.websocket_urlpatterns
+            )
         )
     ),
 })

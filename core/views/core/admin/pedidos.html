@@ -33,7 +33,7 @@
 </div>
 {% else %}
 <div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Mostrando pedidos en preparación y listos para entrega. Solo puedes cambiar el estado de los pedidos que están en preparación.
+    <i class="bi bi-info-circle"></i> Mostrando pedidos recibidos, en preparación y listos para entrega. Puedes cambiar el estado siguiendo el orden: Recibido → En Preparación → Listo para Entrega.
 </div>
 {% endif %}
 
@@ -53,15 +53,17 @@
                         <i class="bi bi-calendar"></i> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}
                     </div>
                     <div class="col-md-2">
-                        <strong class="text-primary">S/ {{ pedido.total_venta }}</strong>
+                        <strong>S/ {{ pedido.total_venta }}</strong>
                     </div>
                     <div class="col-md-2">
-                        {% if pedido.estado == 'EN_PREPARACION' %}
+                        {% if pedido.estado == 'RECIBIDO' %}
+                            <span class="badge bg-secondary">Recibido</span>
+                        {% elif pedido.estado == 'EN_PREPARACION' %}
                             <span class="badge bg-warning text-dark">En Preparación</span>
                         {% elif pedido.estado == 'LISTO_ENTREGA' %}
                             <span class="badge bg-info">Listo</span>
-                        {% elif pedido.estado == 'EN_RUTA' %}
-                            <span class="badge bg-primary">En Ruta</span>
+                        {% elif pedido.estado == 'EN_CAMINO' %}
+                            <span class="badge bg-primary">En Camino</span>
                         {% elif pedido.estado == 'ENTREGADO' %}
                             <span class="badge bg-success">Entregado</span>
                         {% elif pedido.estado == 'NO_ENTREGADO' %}
@@ -103,8 +105,16 @@
                     <!-- Cambiar Estado -->
                     <div class="{% if usuario.rol.nombre_rol == 'Cocina' %}col-md-12{% else %}col-md-6{% endif %}">
                         {% if usuario.rol.nombre_rol == 'Cocina' %}
-                            <!-- Cocina solo puede cambiar pedidos EN_PREPARACION -->
-                            {% if pedido.estado == 'EN_PREPARACION' %}
+                            <!-- Cocina puede cambiar: RECIBIDO -> EN_PREPARACION -> LISTO_ENTREGA -->
+                            {% if pedido.estado == 'RECIBIDO' %}
+                                <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="estado" value="EN_PREPARACION">
+                                    <button type="submit" class="btn btn-warning flex-grow-1">
+                                        <i class="bi bi-play-circle"></i> Comenzar Preparación
+                                    </button>
+                                </form>
+                            {% elif pedido.estado == 'EN_PREPARACION' %}
                                 <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2">
                                     {% csrf_token %}
                                     <input type="hidden" name="estado" value="LISTO_ENTREGA">
@@ -204,4 +214,199 @@
         <i class="bi bi-info-circle"></i> No hay pedidos que mostrar
     </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Configurar WebSocket para notificaciones de nuevos pedidos en tiempo real
+    console.log('🔧 Inicializando WebSocket de cocina...');
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsUrl = `${protocol}${window.location.host}/ws/cocina/`;
+    console.log('🔗 URL WebSocket:', wsUrl);
+    let socket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+
+    function connectWebSocket() {
+        try {
+            console.log('🔌 Intentando conectar WebSocket...');
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function(e) {
+                console.log('✅ Conectado al servidor de cocina');
+                reconnectAttempts = 0;
+                showConnectionStatus(true);
+            };
+
+            socket.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('📨 Mensaje WebSocket recibido:', JSON.stringify(data, null, 2));
+                    
+                    if (data.type === 'nuevo_pedido') {
+                        console.log('🆕 NUEVO PEDIDO DETECTADO:', data.codigo_unico);
+                        mostrarNotificacionNuevoPedido(data);
+                        setTimeout(() => window.location.reload(), 2000);
+                    } 
+                    else if (data.type === 'estado_actualizado') {
+                        console.log('🔄 ESTADO ACTUALIZADO:', data.codigo_unico, 'Nuevo estado:', data.estado);
+                        mostrarNotificacionEstadoActualizado(data);
+                        setTimeout(() => window.location.reload(), 1000);
+                    } 
+                    else {
+                        console.warn('⚠️ Tipo de mensaje no reconocido:', data.type);
+                        console.log('Datos completos:', data);
+                    }
+                } catch (error) {
+                    console.error('❌ Error al procesar mensaje WebSocket:', error);
+                    console.log('Datos raw:', event.data);
+                }
+            };
+
+            socket.onclose = function(event) {
+                console.log('❌ Desconectado del servidor de cocina. Código:', event.code, 'Razón:', event.reason);
+                showConnectionStatus(false);
+                
+                // Intentar reconectar
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`🔄 Reintentando conexión (${reconnectAttempts}/${maxReconnectAttempts})...`);
+                    setTimeout(connectWebSocket, 3000);
+                } else {
+                    console.error('❌ Máximo de reintentos alcanzado. Por favor, recarga la página.');
+                }
+            };
+
+            socket.onerror = function(error) {
+                console.error('❌ Error en WebSocket:', error);
+            };
+            
+        } catch (error) {
+            console.error('❌ Error al conectar WebSocket:', error);
+        }
+    }
+
+    function mostrarNotificacionNuevoPedido(data) {
+        // Crear notificación visual para nuevo pedido
+        const notif = document.createElement('div');
+        notif.className = 'alert alert-warning position-fixed top-0 end-0 m-3 shadow-lg';
+        notif.style.zIndex = '9999';
+        notif.style.minWidth = '300px';
+        notif.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-bell-fill fs-3 me-3"></i>
+                <div>
+                    <h6 class="mb-1">🔔 Nuevo Pedido Recibido</h6>
+                    <p class="mb-0"><strong>${data.codigo_unico}</strong></p>
+                    <small>Cliente: ${data.cliente_nombre} - S/ ${data.total}</small>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notif);
+        
+        // Reproducir sonido
+        playNotificationSound();
+        
+        // Eliminar después de 5 segundos
+        setTimeout(() => {
+            notif.remove();
+        }, 5000);
+    }
+
+    function mostrarNotificacionEstadoActualizado(data) {
+        // Mapear estados a mensajes legibles
+        const estadosMensajes = {
+            'RECIBIDO': '📋 Recibido',
+            'EN_PREPARACION': '🍳 En Preparación',
+            'LISTO_ENTREGA': '✅ Listo para Entrega'
+        };
+        
+        const estadoColor = {
+            'RECIBIDO': 'secondary',
+            'EN_PREPARACION': 'warning',
+            'LISTO_ENTREGA': 'info'
+        };
+        
+        // Crear notificación visual para cambio de estado
+        const notif = document.createElement('div');
+        notif.className = `alert alert-${estadoColor[data.estado] || 'info'} position-fixed top-0 end-0 m-3 shadow-lg`;
+        notif.style.zIndex = '9999';
+        notif.style.minWidth = '300px';
+        notif.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-arrow-repeat fs-3 me-3"></i>
+                <div>
+                    <h6 class="mb-1">Estado Actualizado</h6>
+                    <p class="mb-0"><strong>${data.codigo_unico}</strong></p>
+                    <small>Ahora: ${estadosMensajes[data.estado] || data.estado}</small>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notif);
+        
+        // Reproducir sonido suave
+        playNotificationSound(400);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notif.remove();
+        }, 3000);
+    }
+
+    function playNotificationSound(frequency = 600) {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (error) {
+            console.log('No se pudo reproducir el sonido de notificación');
+        }
+    }
+
+    function showConnectionStatus(connected) {
+        const existingIndicator = document.getElementById('ws-status');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        const indicator = document.createElement('div');
+        indicator.id = 'ws-status';
+        indicator.className = 'position-fixed bottom-0 end-0 m-3 badge';
+        indicator.style.zIndex = '9998';
+        
+        if (connected) {
+            indicator.classList.add('bg-success');
+            indicator.innerHTML = '<i class="bi bi-wifi"></i> Conectado';
+        } else {
+            indicator.classList.add('bg-danger');
+            indicator.innerHTML = '<i class="bi bi-wifi-off"></i> Desconectado';
+        }
+        
+        document.body.appendChild(indicator);
+    }
+
+    // Conectar al cargar la página
+    connectWebSocket();
+    
+    // Cerrar conexión al salir
+    window.addEventListener('beforeunload', function() {
+        if (socket) {
+            socket.close();
+        }
+    });
+</script>
 {% endblock %}

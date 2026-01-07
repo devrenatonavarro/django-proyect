@@ -258,7 +258,7 @@ def finalizar_compra(request):
     pedido = Pedido.objects.create(
         cliente=cliente,
         total_venta=total,
-        estado='EN_PREPARACION'
+        estado='RECIBIDO'  # Estado inicial
     )
     
     # Crear detalles del pedido
@@ -274,6 +274,30 @@ def finalizar_compra(request):
     # Desactivar carrito
     carrito.activo = False
     carrito.save()
+    
+    # Notificar a cocina sobre nuevo pedido
+    from channels.layers import get_channel_layer
+    from asgiref.sync import async_to_sync
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"🍔 Enviando notificación de nuevo pedido {pedido.codigo_unico} a cocina...")
+    
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'cocina',
+            {
+                'type': 'nuevo_pedido',
+                'pedido_id': pedido.id,
+                'codigo_unico': pedido.codigo_unico,
+                'cliente_nombre': cliente.nombre,
+                'total': str(total)
+            }
+        )
+        logger.info(f"✅ Notificación enviada exitosamente para pedido {pedido.codigo_unico}")
+    except Exception as e:
+        logger.error(f"❌ Error al enviar notificación: {e}")
     
     messages.success(request, f'¡Pedido {pedido.codigo_unico} realizado exitosamente!')
     return redirect('mis_pedidos')

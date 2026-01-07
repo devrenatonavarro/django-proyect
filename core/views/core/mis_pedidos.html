@@ -40,32 +40,49 @@
                             <!-- Timeline Stepper de Estados -->
                             <div class="timeline-stepper mb-4">
                                 <div class="stepper-wrapper">
-                                    <div class="stepper-item {% if pedido.estado == 'EN_PREPARACION' or pedido.estado == 'LISTO_ENTREGA' or pedido.estado == 'EN_RUTA' or pedido.estado == 'ENTREGADO' %}completed{% endif %} {% if pedido.estado == 'EN_PREPARACION' %}active{% endif %}">
+                                    <div class="stepper-item {% if pedido.estado == 'RECIBIDO' %}active{% endif %} {% if pedido.estado != 'RECIBIDO' and pedido.estado != 'NO_ENTREGADO' %}completed{% endif %}">
+                                        <div class="step-counter">
+                                            <i class="bi bi-clipboard-check"></i>
+                                        </div>
+                                        <div class="step-name">Recibido</div>
+                                    </div>
+                                    
+                                    <div class="stepper-item {% if pedido.estado == 'EN_PREPARACION' %}active{% endif %} {% if pedido.estado == 'LISTO_ENTREGA' or pedido.estado == 'EN_CAMINO' or pedido.estado == 'ENTREGADO' %}completed{% endif %}">
                                         <div class="step-counter">
                                             <i class="bi bi-egg-fried"></i>
                                         </div>
                                         <div class="step-name">Preparando</div>
                                     </div>
                                     
-                                    <div class="stepper-item {% if pedido.estado == 'LISTO_ENTREGA' or pedido.estado == 'EN_RUTA' or pedido.estado == 'ENTREGADO' %}completed{% endif %} {% if pedido.estado == 'LISTO_ENTREGA' %}active{% endif %}">
+                                    <div class="stepper-item {% if pedido.estado == 'LISTO_ENTREGA' %}active{% endif %} {% if pedido.estado == 'EN_CAMINO' or pedido.estado == 'ENTREGADO' %}completed{% endif %}">
                                         <div class="step-counter">
                                             <i class="bi bi-check2-circle"></i>
                                         </div>
                                         <div class="step-name">Listo</div>
                                     </div>
                                     
-                                    <div class="stepper-item {% if pedido.estado == 'EN_RUTA' or pedido.estado == 'ENTREGADO' %}completed{% endif %} {% if pedido.estado == 'EN_RUTA' %}active{% endif %}">
+                                    <div class="stepper-item {% if pedido.estado == 'EN_CAMINO' %}active{% endif %} {% if pedido.estado == 'ENTREGADO' %}completed{% endif %}">
                                         <div class="step-counter">
                                             <i class="bi bi-truck"></i>
                                         </div>
                                         <div class="step-name">En Camino</div>
                                     </div>
                                     
-                                    <div class="stepper-item {% if pedido.estado == 'ENTREGADO' %}completed active{% endif %}">
+                                    <div class="stepper-item {% if pedido.estado == 'ENTREGADO' %}completed active{% elif pedido.estado == 'NO_ENTREGADO' %}no-entregado active{% endif %}">
                                         <div class="step-counter">
-                                            <i class="bi bi-house-check"></i>
+                                            {% if pedido.estado == 'NO_ENTREGADO' %}
+                                                <i class="bi bi-x-circle"></i>
+                                            {% else %}
+                                                <i class="bi bi-house-check"></i>
+                                            {% endif %}
                                         </div>
-                                        <div class="step-name">Entregado</div>
+                                        <div class="step-name">
+                                            {% if pedido.estado == 'NO_ENTREGADO' %}
+                                                No Entregado
+                                            {% else %}
+                                                Entregado
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -118,13 +135,23 @@
 
                                 {% if pedido.fecha_entrega %}
                                     <div class="col-md-6 mb-2">
-                                        <div class="alert alert-success mb-0 border-0 d-flex align-items-center" style="background-color: #d4edda;">
-                                            <i class="bi bi-check-circle-fill fs-4 me-2"></i>
-                                            <div>
-                                                <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">Entregado</small>
-                                                <strong>{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+                                        {% if pedido.estado == 'NO_ENTREGADO' %}
+                                            <div class="alert alert-danger mb-0 border-0 d-flex align-items-center" style="background-color: #f8d7da;">
+                                                <i class="bi bi-x-circle-fill fs-4 me-2"></i>
+                                                <div>
+                                                    <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">No Entregado</small>
+                                                    <strong>{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+                                                </div>
                                             </div>
-                                        </div>
+                                        {% else %}
+                                            <div class="alert alert-success mb-0 border-0 d-flex align-items-center" style="background-color: #d4edda;">
+                                                <i class="bi bi-check-circle-fill fs-4 me-2"></i>
+                                                <div>
+                                                    <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">Entregado</small>
+                                                    <strong>{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+                                                </div>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 {% endif %}
                             </div>
@@ -249,6 +276,25 @@
     .stepper-item.active .step-name {
         color: #ff9800;
         font-weight: 700;
+    }
+    
+    /* Estado No Entregado */
+    .stepper-item.no-entregado .step-counter {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.5);
+        animation: shakeError 0.5s;
+    }
+    
+    .stepper-item.no-entregado .step-name {
+        color: #dc3545;
+        font-weight: 700;
+    }
+    
+    @keyframes shakeError {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
     }
 
     /* Producto Item Styles */

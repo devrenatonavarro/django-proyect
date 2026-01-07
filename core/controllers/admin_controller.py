@@ -98,17 +98,17 @@ def admin_mis_entregas(request):
     
     # Repartidores ven:
     # - Todos los pedidos LISTO_ENTREGA (disponibles para tomar)
-    # - Solo sus pedidos EN_RUTA asignados
+    # - Solo sus pedidos EN_CAMINO asignados
     from django.db.models import Q
     pedidos = Pedido.objects.filter(
-        Q(estado='LISTO_ENTREGA') | Q(estado='EN_RUTA', repartidor=usuario)
+        Q(estado='LISTO_ENTREGA') | Q(estado='EN_CAMINO', repartidor=usuario)
     ).select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
     # Aplicar ordenamiento
     if ordenar == 'fecha':
         pedidos = pedidos.order_by('-fecha_creacion')
     elif ordenar == 'estado':
-        # Priorizar EN_RUTA sobre LISTO_ENTREGA y ENTREGADO al final
+        # Priorizar EN_CAMINO sobre LISTO_ENTREGA y ENTREGADO al final
         pedidos = pedidos.order_by('estado', '-fecha_creacion')
     elif ordenar == 'total':
         pedidos = pedidos.order_by('-total_venta')

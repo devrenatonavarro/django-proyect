@@ -101,14 +101,18 @@
                                 <td>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
                                 <td>S/ {{ pedido.total_venta }}</td>
                                 <td>
-                                    {% if pedido.estado == 'EN_PREPARACION' %}
+                                    {% if pedido.estado == 'RECIBIDO' %}
+                                        <span class="badge bg-secondary">Recibido</span>
+                                    {% elif pedido.estado == 'EN_PREPARACION' %}
                                         <span class="badge bg-warning text-dark">En Preparación</span>
                                     {% elif pedido.estado == 'LISTO_ENTREGA' %}
                                         <span class="badge bg-info">Listo</span>
-                                    {% elif pedido.estado == 'EN_RUTA' %}
-                                        <span class="badge bg-primary">En Ruta</span>
+                                    {% elif pedido.estado == 'EN_CAMINO' %}
+                                        <span class="badge bg-primary">En Camino</span>
                                     {% elif pedido.estado == 'ENTREGADO' %}
                                         <span class="badge bg-success">Entregado</span>
+                                    {% elif pedido.estado == 'NO_ENTREGADO' %}
+                                        <span class="badge bg-danger">No Entregado</span>
                                     {% endif %}
                                 </td>
                                 <td>

@@ -50,8 +50,8 @@
                             <span class="badge bg-warning text-dark">En Preparación</span>
                         {% elif pedido.estado == 'LISTO_ENTREGA' %}
                             <span class="badge bg-info">Listo para Entrega</span>
-                        {% elif pedido.estado == 'EN_RUTA' %}
-                            <span class="badge bg-primary">En Ruta</span>
+                        {% elif pedido.estado == 'EN_CAMINO' %}
+                            <span class="badge bg-primary">En Camino</span>
                         {% elif pedido.estado == 'ENTREGADO' %}
                             <span class="badge bg-success">Entregado</span>
                         {% elif pedido.estado == 'NO_ENTREGADO' %}
@@ -91,15 +91,15 @@
                     {% if pedido.estado == 'LISTO_ENTREGA' %}
                         <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="flex-grow-1">
                             {% csrf_token %}
-                            <input type="hidden" name="estado" value="EN_RUTA">
+                            <input type="hidden" name="estado" value="EN_CAMINO">
                             <button type="submit" class="btn btn-primary w-100 h-100">
-                                <i class="bi bi-truck"></i> Marcar En Ruta
+                                <i class="bi bi-truck"></i> Marcar En Camino
                             </button>
                         </form>
                         <a href="tel:{{ pedido.cliente.telefono }}" class="btn btn-outline-primary">
                             <i class="bi bi-telephone"></i> Llamar
                         </a>
-                    {% elif pedido.estado == 'EN_RUTA' %}
+                    {% elif pedido.estado == 'EN_CAMINO' %}
                         <form method="post" action="{% url 'admin_cambiar_estado_pedido' pedido.id %}" class="d-flex gap-2 flex-grow-1">
                             {% csrf_token %}
                             <button type="submit" name="estado" value="ENTREGADO" class="btn btn-success flex-grow-1">
@@ -122,4 +122,148 @@
         <i class="bi bi-info-circle"></i> No tienes entregas asignadas actualmente
     </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Configurar WebSocket para notificaciones en tiempo real
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsUrl = `${protocol}${window.location.host}/ws/repartidores/`;
+    let socket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+
+    function connectWebSocket() {
+        try {
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function(e) {
+                console.log('✅ Conectado al servidor de entregas');
+                reconnectAttempts = 0;
+                
+                // Mostrar indicador de conexión
+                showConnectionStatus(true);
+            };
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('📦 Nuevo pedido listo:', data);
+                
+                if (data.type === 'pedido_listo') {
+                    // Mostrar notificación
+                    mostrarNotificacion(data);
+                    
+                    // Recargar la página después de 2 segundos para mostrar el nuevo pedido
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            };
+
+            socket.onclose = function(event) {
+                console.log('❌ Desconectado del servidor de entregas');
+                showConnectionStatus(false);
+                
+                // Intentar reconectar
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Reintentando conexión (${reconnectAttempts}/${maxReconnectAttempts})...`);
+                    setTimeout(connectWebSocket, 3000);
+                }
+            };
+
+            socket.onerror = function(error) {
+                console.error('❌ Error en WebSocket:', error);
+            };
+            
+        } catch (error) {
+            console.error('Error al conectar WebSocket:', error);
+        }
+    }
+
+    function mostrarNotificacion(data) {
+        // Crear notificación visual
+        const notif = document.createElement('div');
+        notif.className = 'alert alert-success position-fixed top-0 end-0 m-3 shadow-lg';
+        notif.style.zIndex = '9999';
+        notif.style.minWidth = '300px';
+        notif.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-bell-fill fs-3 me-3"></i>
+                <div>
+                    <h6 class="mb-1">🎉 Nuevo Pedido Listo</h6>
+                    <p class="mb-0"><strong>${data.codigo_unico}</strong></p>
+                    <small>Cliente: ${data.cliente_nombre} - S/ ${data.total}</small>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notif);
+        
+        // Reproducir sonido (opcional)
+        playNotificationSound();
+        
+        // Eliminar después de 5 segundos
+        setTimeout(() => {
+            notif.remove();
+        }, 5000);
+    }
+
+    function playNotificationSound() {
+        try {
+            // Crear un beep simple
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (error) {
+            console.log('No se pudo reproducir el sonido de notificación');
+        }
+    }
+
+    function showConnectionStatus(connected) {
+        // Remover indicadores existentes
+        const existingIndicator = document.getElementById('ws-status');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        // Crear nuevo indicador
+        const indicator = document.createElement('div');
+        indicator.id = 'ws-status';
+        indicator.className = 'position-fixed bottom-0 end-0 m-3 badge';
+        indicator.style.zIndex = '9998';
+        
+        if (connected) {
+            indicator.classList.add('bg-success');
+            indicator.innerHTML = '<i class="bi bi-wifi"></i> Conectado';
+        } else {
+            indicator.classList.add('bg-danger');
+            indicator.innerHTML = '<i class="bi bi-wifi-off"></i> Desconectado';
+        }
+        
+        document.body.appendChild(indicator);
+    }
+
+    // Conectar al cargar la página
+    connectWebSocket();
+    
+    // Cerrar conexión al salir
+    window.addEventListener('beforeunload', function() {
+        if (socket) {
+            socket.close();
+        }
+    });
+</script>
 {% endblock %}

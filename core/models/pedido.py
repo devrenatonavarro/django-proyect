@@ -16,16 +16,25 @@ class Pedido(models.Model):
     Pedidos realizados por los clientes.
     - codigo_unico: Se genera automáticamente para identificar el pedido
     - repartidor_id: Permite NULL porque inicialmente no tiene repartidor asignado
-    - estado: Sigue el flujo del pedido desde preparación hasta entrega
+    - estado: Sigue el flujo del pedido desde recepción hasta entrega
+    
+    Flujo de estados:
+    1. RECIBIDO: Estado inicial cuando el cliente realiza el pedido
+    2. EN_PREPARACION: El cocinero comienza a preparar el pedido
+    3. LISTO_ENTREGA: El pedido está listo para ser entregado
+    4. EN_CAMINO: El repartidor está en camino con el pedido
+    5. ENTREGADO: El pedido fue entregado exitosamente
+    6. NO_ENTREGADO: Hubo un problema y el pedido no pudo ser entregado
     
     Relaciones:
     - Un pedido -> Un cliente
     - Un pedido -> Un repartidor (opcional, puede ser NULL)
     """
     ESTADOS = [
+        ('RECIBIDO', 'Recibido'),
         ('EN_PREPARACION', 'En preparación'),
         ('LISTO_ENTREGA', 'Listo para entrega'),
-        ('EN_RUTA', 'En ruta'),
+        ('EN_CAMINO', 'En camino'),
         ('ENTREGADO', 'Entregado'),
         ('NO_ENTREGADO', 'No entregado'),
     ]
@@ -36,11 +45,11 @@ class Pedido(models.Model):
         Usuario, 
         on_delete=models.SET_NULL, 
         null=True, 
-        blank=True, 
+        blank=True,     
         related_name='pedidos_asignados',
         limit_choices_to={'rol__nombre_rol': 'Repartidores'}
     )
-    estado = models.CharField(max_length=20, choices=ESTADOS, default='EN_PREPARACION')
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='RECIBIDO')
     fecha_creacion = models.DateTimeField(default=timezone.now)
     fecha_entrega = models.DateTimeField(null=True, blank=True)
     total_venta = models.DecimalField(max_digits=10, decimal_places=2)

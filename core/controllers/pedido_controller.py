@@ -23,9 +23,9 @@ def admin_pedidos(request):
     
     pedidos = Pedido.objects.select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
-    # Si es Cocina, ver pedidos EN_PREPARACION y LISTO_ENTREGA
+    # Si es Cocina, ver pedidos RECIBIDO, EN_PREPARACION y LISTO_ENTREGA
     if usuario.rol.nombre_rol == 'Cocina':
-        pedidos = pedidos.filter(estado__in=['EN_PREPARACION', 'LISTO_ENTREGA'])
+        pedidos = pedidos.filter(estado__in=['RECIBIDO', 'EN_PREPARACION', 'LISTO_ENTREGA'])
     elif estado_filtro:
         pedidos = pedidos.filter(estado=estado_filtro)
     
@@ -57,21 +57,24 @@ def admin_cambiar_estado_pedido(request, pedido_id):
         
         # Validar permisos de Cocina
         if usuario.rol.nombre_rol == 'Cocina':
-            # Cocina solo puede cambiar de EN_PREPARACION a LISTO_ENTREGA
-            if pedido.estado != 'EN_PREPARACION':
-                messages.error(request, 'Este pedido ya fue marcado como listo y no puede ser modificado')
+            # Cocina puede cambiar: RECIBIDO -> EN_PREPARACION -> LISTO_ENTREGA
+            if pedido.estado == 'RECIBIDO' and nuevo_estado != 'EN_PREPARACION':
+                messages.error(request, 'Solo puedes cambiar el pedido a "En preparación"')
                 return redirect('admin_pedidos')
-            if nuevo_estado != 'LISTO_ENTREGA':
+            elif pedido.estado == 'EN_PREPARACION' and nuevo_estado != 'LISTO_ENTREGA':
                 messages.error(request, 'Solo puedes marcar el pedido como "Listo para entrega"')
+                return redirect('admin_pedidos')
+            elif pedido.estado not in ['RECIBIDO', 'EN_PREPARACION']:
+                messages.error(request, 'Este pedido ya no puede ser modificado por Cocina')
                 return redirect('admin_pedidos')
         
         # Validar permisos de Repartidor
         if usuario.rol.nombre_rol == 'Repartidores':
             # Validar transiciones permitidas
-            if pedido.estado == 'LISTO_ENTREGA' and nuevo_estado == 'EN_RUTA':
+            if pedido.estado == 'LISTO_ENTREGA' and nuevo_estado == 'EN_CAMINO':
                 # Asignar el repartidor automáticamente
                 pedido.repartidor = usuario
-            elif pedido.estado == 'EN_RUTA' and nuevo_estado in ['ENTREGADO', 'NO_ENTREGADO']:
+            elif pedido.estado == 'EN_CAMINO' and nuevo_estado in ['ENTREGADO', 'NO_ENTREGADO']:
                 # Verificar que el pedido esté asignado a este repartidor
                 if pedido.repartidor != usuario:
                     messages.error(request, 'Este pedido no está asignado a ti')
@@ -83,11 +86,14 @@ def admin_cambiar_estado_pedido(request, pedido_id):
         if nuevo_estado in dict(Pedido.ESTADOS):
             pedido.estado = nuevo_estado
             
-            # Si el estado es ENTREGADO, registrar fecha de entrega
-            if nuevo_estado == 'ENTREGADO':
+            # Si el estado es ENTREGADO o NO_ENTREGADO, registrar fecha de entrega
+            if nuevo_estado in ['ENTREGADO', 'NO_ENTREGADO']:
                 pedido.fecha_entrega = timezone.now()
             
             pedido.save()
+            
+            import logging
+            logger = logging.getLogger(__name__)
             
             # Enviar notificación WebSocket al cliente
             channel_layer = get_channel_layer()
@@ -100,6 +106,33 @@ def admin_cambiar_estado_pedido(request, pedido_id):
                     'codigo_unico': pedido.codigo_unico
                 }
             )
+            
+            # Notificar a cocina sobre CUALQUIER cambio en pedidos
+            # Esto incluye cuando se crea (RECIBIDO) o cuando cambia de estado
+            logger.info(f"🔔 Notificando a cocina cambio en pedido {pedido.codigo_unico} a estado {nuevo_estado}")
+            async_to_sync(channel_layer.group_send)(
+                'cocina',
+                {
+                    'type': 'estado_actualizado',
+                    'pedido_id': pedido.id,
+                    'codigo_unico': pedido.codigo_unico,
+                    'estado': nuevo_estado,
+                    'cliente_nombre': pedido.cliente.nombre
+                }
+            )
+            
+            # Si el pedido está LISTO_ENTREGA, notificar a todos los repartidores
+            if nuevo_estado == 'LISTO_ENTREGA':
+                async_to_sync(channel_layer.group_send)(
+                    'repartidores',
+                    {
+                        'type': 'pedido_listo',
+                        'pedido_id': pedido.id,
+                        'codigo_unico': pedido.codigo_unico,
+                        'cliente_nombre': pedido.cliente.nombre,
+                        'total': str(pedido.total_venta)
+                    }
+                )
             
             # Si se marca como entregado, notificar a cajeros y admins
             if nuevo_estado == 'ENTREGADO':

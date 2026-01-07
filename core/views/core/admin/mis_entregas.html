@@ -39,7 +39,7 @@
                         <h5 class="mb-0">{{ pedido.codigo_unico }}</h5>
                     </div>
                     <div class="col-md-4">
-                        <i class="bi bi-calendar"></i> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}
+                        <i class="bi bi-calendar"></i> <span class="date-local" data-utc="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</span>
                     </div>
                     <div class="col-md-4 text-end">
                         {% if pedido.estado == 'EN_PREPARACION' %}

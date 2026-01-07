@@ -14,19 +14,19 @@
     </div>
 
     {% if pedidos %}
-        <div class="row" id="pedidos-container">
+        <div class="accordion" id="pedidosAccordion">
             {% for pedido in pedidos %}
-                <div class="col-12 mb-4" data-pedido-id="{{ pedido.id }}" data-pedido-estado="{{ pedido.estado }}">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <div class="row align-items-center">
+                <div class="accordion-item mb-3 border-0 shadow-sm" data-pedido-id="{{ pedido.id }}" data-pedido-estado="{{ pedido.estado }}">
+                    <h2 class="accordion-header" id="heading{{ pedido.id }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ pedido.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ pedido.id }}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px;">
+                            <div class="row align-items-center w-100">
                                 <div class="col-md-4">
                                     <h5 class="mb-0">
                                         <i class="bi bi-receipt"></i> {{ pedido.codigo_unico }}
                                     </h5>
                                 </div>
                                 <div class="col-md-4 text-center">
-                                    <small><i class="bi bi-calendar3"></i> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                    <small><i class="bi bi-calendar3"></i> <span class="date-local" data-utc="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</span></small>
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <h5 class="mb-0">
@@ -34,9 +34,10 @@
                                     </h5>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div class="card-body p-4">
+                        </button>
+                    </h2>
+                    <div id="collapse{{ pedido.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ pedido.id }}" data-bs-parent="#pedidosAccordion">
+                        <div class="accordion-body p-4">
                             <!-- Timeline Stepper de Estados -->
                             <div class="timeline-stepper mb-4">
                                 <div class="stepper-wrapper">
@@ -140,7 +141,7 @@
                                                 <i class="bi bi-x-circle-fill fs-4 me-2"></i>
                                                 <div>
                                                     <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">No Entregado</small>
-                                                    <strong>{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+                                                    <strong><span class="date-local" data-utc="{{ pedido.fecha_entrega|date:'c' }}">{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</span></strong>
                                                 </div>
                                             </div>
                                         {% else %}
@@ -148,7 +149,7 @@
                                                 <i class="bi bi-check-circle-fill fs-4 me-2"></i>
                                                 <div>
                                                     <small class="d-block text-muted mb-0" style="font-size: 0.75rem;">Entregado</small>
-                                                    <strong>{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+                                                    <strong><span class="date-local" data-utc="{{ pedido.fecha_entrega|date:'c' }}">{{ pedido.fecha_entrega|date:"d/m/Y H:i" }}</span></strong>
                                                 </div>
                                             </div>
                                         {% endif %}
@@ -331,6 +332,30 @@
             box-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
         }
     }
+
+    /* Accordion Styles */
+    .accordion-button {
+        border-radius: 10px !important;
+        font-weight: 500;
+    }
+
+    .accordion-button:not(.collapsed) {
+        border-radius: 10px 10px 0 0 !important;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border: none;
+    }
+
+    .accordion-item {
+        border-radius: 10px !important;
+        overflow: hidden;
+    }
+
+    .accordion-body {
+        background-color: white;
+    }
 </style>
 
 <script>
@@ -384,10 +409,50 @@ function actualizarPedido(pedidoId) {
         if (nuevoPedidoElement) {
             const pedidoActual = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
             if (pedidoActual) {
+                // Guardar el estado de expansión del acordeón
+                const collapse = pedidoActual.querySelector('.accordion-collapse');
+                const estabaExpandido = collapse ? collapse.classList.contains('show') : false;
+                
+                // Actualizar el contenido
                 pedidoActual.outerHTML = nuevoPedidoElement.outerHTML;
                 
-                // Añadir animación de actualización
+                // Obtener el pedido recién actualizado
                 const pedidoActualizado = document.querySelector(`[data-pedido-id="${pedidoId}"]`);
+                
+                // Restaurar el estado de expansión si estaba abierto
+                if (estabaExpandido) {
+                    const nuevoCollapse = pedidoActualizado.querySelector('.accordion-collapse');
+                    if (nuevoCollapse) {
+                        nuevoCollapse.classList.add('show');
+                        const button = pedidoActualizado.querySelector('.accordion-button');
+                        if (button) {
+                            button.classList.remove('collapsed');
+                            button.setAttribute('aria-expanded', 'true');
+                        }
+                    }
+                }
+                
+                // Reconvertir fechas a zona horaria local
+                const dateElements = pedidoActualizado.querySelectorAll('.date-local');
+                dateElements.forEach(function(element) {
+                    const utcDateStr = element.getAttribute('data-utc');
+                    if (utcDateStr) {
+                        const utcDate = new Date(utcDateStr);
+                        const localDate = utcDate.toLocaleDateString('es-PE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                        const localTime = utcDate.toLocaleTimeString('es-PE', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        });
+                        element.textContent = `${localDate} ${localTime}`;
+                    }
+                });
+                
+                // Añadir animación de actualización
                 pedidoActualizado.classList.add('pedido-actualizado');
                 setTimeout(() => {
                     pedidoActualizado.classList.remove('pedido-actualizado');
@@ -433,7 +498,7 @@ function mostrarNotificacion(mensaje) {
 }
 
 // Iniciar WebSocket si hay pedidos
-if (document.getElementById('pedidos-container')) {
+if (document.getElementById('pedidosAccordion')) {
     conectarWebSocket();
     
     // Limpiar conexión al salir de la página

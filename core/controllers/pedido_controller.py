@@ -24,9 +24,9 @@ def admin_pedidos(request):
     
     pedidos = Pedido.objects.select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
-    # Si es Cocina, ver pedidos RECIBIDO, EN_PREPARACION y LISTO_ENTREGA
+    # Si es Cocina, ver solo pedidos RECIBIDO y EN_PREPARACION
     if usuario.rol.nombre_rol == 'Cocina':
-        pedidos = pedidos.filter(estado__in=['RECIBIDO', 'EN_PREPARACION', 'LISTO_ENTREGA'])
+        pedidos = pedidos.filter(estado__in=['RECIBIDO', 'EN_PREPARACION'])
     elif estado_filtro:
         pedidos = pedidos.filter(estado=estado_filtro)
     

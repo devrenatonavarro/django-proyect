@@ -249,5 +249,33 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Convertir todas las fechas UTC a zona horaria local del navegador
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateElements = document.querySelectorAll('.date-local');
+            
+            dateElements.forEach(function(element) {
+                const utcDateStr = element.getAttribute('data-utc');
+                if (utcDateStr) {
+                    const utcDate = new Date(utcDateStr);
+                    
+                    // Formatear fecha en zona horaria local
+                    const localDate = utcDate.toLocaleDateString('es-PE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    
+                    const localTime = utcDate.toLocaleTimeString('es-PE', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                    
+                    element.textContent = `${localDate} ${localTime}`;
+                }
+            });
+        });
+    </script>
 </body>
 </html>

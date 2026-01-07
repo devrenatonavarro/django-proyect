@@ -6,16 +6,16 @@
 
 {% block content %}
 <!-- Estadísticas -->
-<div class="row g-4 mb-4">
-    <div class="col-md-3">
+<div class="row g-3 g-md-4 mb-4">
+    <div class="col-6 col-lg-3">
         <div class="card stat-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Total Pedidos</h6>
-                        <h2 class="mb-0">{{ total_pedidos }}</h2>
+            <div class="card-body p-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+                    <div class="mb-2 mb-sm-0" style="flex: 1; min-width: 0;">
+                        <h6 class="text-muted mb-1 small">Total Pedidos</h6>
+                        <h2 class="mb-0 fs-3 fs-md-2">{{ total_pedidos }}</h2>
                     </div>
-                    <div class="text-primary" style="font-size: 2.5rem;">
+                    <div class="text-primary" style="font-size: 2rem; flex-shrink: 0;">
                         <i class="bi bi-receipt"></i>
                     </div>
                 </div>
@@ -23,15 +23,15 @@
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card stat-card" style="border-left-color: #fd7e14;">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Pendientes</h6>
-                        <h2 class="mb-0">{{ pedidos_pendientes }}</h2>
+            <div class="card-body p-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+                    <div class="mb-2 mb-sm-0" style="flex: 1; min-width: 0;">
+                        <h6 class="text-muted mb-1 small">Pendientes</h6>
+                        <h2 class="mb-0 fs-3 fs-md-2">{{ pedidos_pendientes }}</h2>
                     </div>
-                    <div class="text-warning" style="font-size: 2.5rem;">
+                    <div class="text-warning" style="font-size: 2rem; flex-shrink: 0;">
                         <i class="bi bi-clock-history"></i>
                     </div>
                 </div>
@@ -39,15 +39,15 @@
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card stat-card" style="border-left-color: #198754;">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Pedidos Hoy</h6>
-                        <h2 class="mb-0">{{ pedidos_hoy }}</h2>
+            <div class="card-body p-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+                    <div class="mb-2 mb-sm-0" style="flex: 1; min-width: 0;">
+                        <h6 class="text-muted mb-1 small">Pedidos Hoy</h6>
+                        <h2 class="mb-0 fs-3 fs-md-2">{{ pedidos_hoy }}</h2>
                     </div>
-                    <div class="text-success" style="font-size: 2.5rem;">
+                    <div class="text-success" style="font-size: 2rem; flex-shrink: 0;">
                         <i class="bi bi-calendar-check"></i>
                     </div>
                 </div>
@@ -55,15 +55,15 @@
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-6 col-lg-3">
         <div class="card stat-card" style="border-left-color: #20c997;">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Ventas Totales</h6>
-                        <h2 class="mb-0">S/ {{ ventas_totales|floatformat:2 }}</h2>
+            <div class="card-body p-3">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
+                    <div class="mb-2 mb-sm-0" style="flex: 1; min-width: 0; max-width: 100%;">
+                        <h6 class="text-muted mb-1 small text-nowrap">Ventas Totales</h6>
+                        <h2 class="mb-0 fs-3 fs-md-2" style="font-size: clamp(1.2rem, 2.5vw, 2rem) !important; line-height: 1.2; word-break: break-word;">S/ {{ ventas_totales|floatformat:2 }}</h2>
                     </div>
-                    <div class="text-info" style="font-size: 2.5rem;">
+                    <div class="text-info" style="font-size: 2rem; flex-shrink: 0;">
                         <i class="bi bi-cash-stack"></i>
                     </div>
                 </div>
@@ -75,57 +75,106 @@
 <!-- Pedidos Recientes -->
 <div class="card">
     <div class="card-header bg-white">
-        <h5 class="mb-0">
+        <h5 class="mb-0 fs-6 fs-md-5">
             <i class="bi bi-clock-history"></i> Pedidos Recientes
         </h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-2 p-md-3">
         {% if pedidos_recientes %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Código</th>
-                            <th>Cliente</th>
-                            <th>Fecha</th>
-                            <th>Total</th>
-                            <th>Estado</th>
-                            <th>Repartidor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pedido in pedidos_recientes %}
+            <!-- Vista de tabla para desktop -->
+            <div class="d-none d-lg-block">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <td><strong>{{ pedido.codigo_unico }}</strong></td>
-                                <td>{{ pedido.cliente.nombre }}</td>
-                                <td>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                                <td>S/ {{ pedido.total_venta }}</td>
-                                <td>
-                                    {% if pedido.estado == 'RECIBIDO' %}
-                                        <span class="badge bg-secondary">Recibido</span>
-                                    {% elif pedido.estado == 'EN_PREPARACION' %}
-                                        <span class="badge bg-warning text-dark">En Preparación</span>
-                                    {% elif pedido.estado == 'LISTO_ENTREGA' %}
-                                        <span class="badge bg-info">Listo</span>
-                                    {% elif pedido.estado == 'EN_CAMINO' %}
-                                        <span class="badge bg-primary">En Camino</span>
-                                    {% elif pedido.estado == 'ENTREGADO' %}
-                                        <span class="badge bg-success">Entregado</span>
-                                    {% elif pedido.estado == 'NO_ENTREGADO' %}
-                                        <span class="badge bg-danger">No Entregado</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if pedido.repartidor %}
-                                        <i class="bi bi-person-check"></i> {{ pedido.repartidor.nombre }}
-                                    {% else %}
-                                        <span class="text-muted">Sin asignar</span>
-                                    {% endif %}
-                                </td>
+                                <th class="small">Código</th>
+                                <th class="small">Cliente</th>
+                                <th class="small">Fecha</th>
+                                <th class="small">Total</th>
+                                <th class="small">Estado</th>
+                                <th class="small">Repartidor</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for pedido in pedidos_recientes %}
+                                <tr>
+                                    <td><strong class="small">{{ pedido.codigo_unico }}</strong></td>
+                                    <td class="small">{{ pedido.cliente.nombre }}</td>
+                                    <td class="small"><span class="date-local" data-utc="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</span></td>
+                                    <td class="small">S/ {{ pedido.total_venta }}</td>
+                                    <td>
+                                        {% if pedido.estado == 'RECIBIDO' %}
+                                            <span class="badge bg-secondary">Recibido</span>
+                                        {% elif pedido.estado == 'EN_PREPARACION' %}
+                                            <span class="badge bg-warning text-dark">En Preparación</span>
+                                        {% elif pedido.estado == 'LISTO_ENTREGA' %}
+                                            <span class="badge bg-info">Listo</span>
+                                        {% elif pedido.estado == 'EN_CAMINO' %}
+                                            <span class="badge bg-primary">En Camino</span>
+                                        {% elif pedido.estado == 'ENTREGADO' %}
+                                            <span class="badge bg-success">Entregado</span>
+                                        {% elif pedido.estado == 'NO_ENTREGADO' %}
+                                            <span class="badge bg-danger">No Entregado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        {% if pedido.repartidor %}
+                                            <i class="bi bi-person-check"></i> {{ pedido.repartidor.nombre }}
+                                        {% else %}
+                                            <span class="text-muted">Sin asignar</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Vista de tarjetas para móvil/tablet -->
+            <div class="d-lg-none">
+                {% for pedido in pedidos_recientes %}
+                    <div class="card mb-2 border">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-0 small fw-bold">{{ pedido.codigo_unico }}</h6>
+                                    <small class="text-muted">{{ pedido.cliente.nombre }}</small>
+                                </div>
+                                <div>
+                                    {% if pedido.estado == 'RECIBIDO' %}
+                                        <span class="badge bg-secondary small">Recibido</span>
+                                    {% elif pedido.estado == 'EN_PREPARACION' %}
+                                        <span class="badge bg-warning text-dark small">En Preparación</span>
+                                    {% elif pedido.estado == 'LISTO_ENTREGA' %}
+                                        <span class="badge bg-info small">Listo</span>
+                                    {% elif pedido.estado == 'EN_CAMINO' %}
+                                        <span class="badge bg-primary small">En Camino</span>
+                                    {% elif pedido.estado == 'ENTREGADO' %}
+                                        <span class="badge bg-success small">Entregado</span>
+                                    {% elif pedido.estado == 'NO_ENTREGADO' %}
+                                        <span class="badge bg-danger small">No Entregado</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block"><i class="bi bi-calendar3"></i> <span class="date-local" data-utc="{{ pedido.fecha_creacion|date:'c' }}">{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</span></small>
+                                    <small class="text-muted">
+                                        {% if pedido.repartidor %}
+                                            <i class="bi bi-person-check"></i> {{ pedido.repartidor.nombre }}
+                                        {% else %}
+                                            <i class="bi bi-person-x"></i> Sin asignar
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div>
+                                    <strong class="text-primary">S/ {{ pedido.total_venta }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         {% else %}
             <p class="text-muted text-center py-4 mb-0">No hay pedidos recientes</p>

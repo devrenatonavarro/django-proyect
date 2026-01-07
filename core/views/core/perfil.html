@@ -128,7 +128,7 @@
             <div class="card shadow mt-3">
                 <div class="card-body">
                     <h5><i class="bi bi-info-circle"></i> Información de Cuenta</h5>
-                    <p class="mb-1"><strong>Fecha de Registro:</strong> {{ cliente.fecha_registro|date:"d/m/Y H:i" }}</p>
+                    <p class="mb-1"><strong>Fecha de Registro:</strong> <span class="date-local" data-utc="{{ cliente.fecha_registro|date:'c' }}">{{ cliente.fecha_registro|date:"d/m/Y H:i" }}</span></p>
                     <p class="mb-0"><strong>Email de Contacto:</strong> {{ cliente.email }}</p>
                 </div>
             </div>

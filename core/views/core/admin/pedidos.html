@@ -5,14 +5,18 @@
 {% block page_title %}Gestionar Pedidos{% endblock %}
 
 {% block content %}
-<!-- Filtros (No mostrar para Cocina) -->
-{% if usuario.rol.nombre_rol != 'Cocina' %}
+<!-- Filtros -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <label for="codigo" class="form-label">Buscar por Código</label>
+                <input type="text" name="codigo" id="codigo" class="form-control" placeholder="Código del pedido" value="{{ codigo_busqueda }}">
+            </div>
+            {% if usuario.rol.nombre_rol != 'Cocina' %}
+            <div class="col-md-3">
                 <label for="estado" class="form-label">Filtrar por Estado</label>
-                <select name="estado" id="estado" class="form-select" onchange="this.form.submit()">
+                <select name="estado" id="estado" class="form-select">
                     <option value="">Todos los estados</option>
                     {% for codigo, nombre in estados %}
                         <option value="{{ codigo }}" {% if estado_filtro == codigo %}selected{% endif %}>
@@ -21,7 +25,13 @@
                     {% endfor %}
                 </select>
             </div>
-            {% if estado_filtro %}
+            {% endif %}
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+            {% if estado_filtro or codigo_busqueda %}
                 <div class="col-md-2">
                     <a href="{% url 'admin_pedidos' %}" class="btn btn-secondary">
                         <i class="bi bi-x-circle"></i> Limpiar
@@ -31,11 +41,6 @@
         </form>
     </div>
 </div>
-{% else %}
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> Mostrando pedidos recibidos, en preparación y listos para entrega. Puedes cambiar el estado siguiendo el orden: Recibido → En Preparación → Listo para Entrega.
-</div>
-{% endif %}
 
 <!-- Lista de Pedidos -->
 {% if pedidos %}

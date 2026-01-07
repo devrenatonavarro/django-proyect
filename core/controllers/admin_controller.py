@@ -93,8 +93,8 @@ def admin_mis_entregas(request):
         messages.error(request, 'Acceso denegado')
         return redirect('admin_dashboard')
     
-    # Obtener filtro de ordenamiento
-    ordenar = request.GET.get('ordenar', 'fecha')
+    # Obtener código de búsqueda
+    codigo_busqueda = request.GET.get('codigo', '').strip()
     
     # Repartidores ven:
     # - Todos los pedidos LISTO_ENTREGA (disponibles para tomar)
@@ -104,19 +104,17 @@ def admin_mis_entregas(request):
         Q(estado='LISTO_ENTREGA') | Q(estado='EN_CAMINO', repartidor=usuario)
     ).select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
-    # Aplicar ordenamiento
-    if ordenar == 'fecha':
-        pedidos = pedidos.order_by('-fecha_creacion')
-    elif ordenar == 'estado':
-        # Priorizar EN_CAMINO sobre LISTO_ENTREGA y ENTREGADO al final
-        pedidos = pedidos.order_by('estado', '-fecha_creacion')
-    elif ordenar == 'total':
-        pedidos = pedidos.order_by('-total_venta')
+    # Filtrar por código si se proporciona
+    if codigo_busqueda:
+        pedidos = pedidos.filter(codigo_unico__icontains=codigo_busqueda)
+    
+    # Siempre ordenar por fecha descendente (más reciente primero)
+    pedidos = pedidos.order_by('-fecha_creacion')
     
     context = {
         'usuario': usuario,
         'pedidos': pedidos,
-        'ordenar': ordenar,
+        'codigo_busqueda': codigo_busqueda,
     }
     
     return render(request, 'core/admin/mis_entregas.html', context)

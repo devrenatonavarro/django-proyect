@@ -20,6 +20,7 @@ def admin_pedidos(request):
     
     # Filtros
     estado_filtro = request.GET.get('estado', '')
+    codigo_busqueda = request.GET.get('codigo', '').strip()
     
     pedidos = Pedido.objects.select_related('cliente', 'repartidor').prefetch_related('detalles__producto')
     
@@ -28,6 +29,10 @@ def admin_pedidos(request):
         pedidos = pedidos.filter(estado__in=['RECIBIDO', 'EN_PREPARACION', 'LISTO_ENTREGA'])
     elif estado_filtro:
         pedidos = pedidos.filter(estado=estado_filtro)
+    
+    # Filtrar por código si se proporciona
+    if codigo_busqueda:
+        pedidos = pedidos.filter(codigo_unico__icontains=codigo_busqueda)
     
     pedidos = pedidos.order_by('-fecha_creacion')
     
@@ -38,6 +43,7 @@ def admin_pedidos(request):
         'usuario': usuario,
         'pedidos': pedidos,
         'estado_filtro': estado_filtro,
+        'codigo_busqueda': codigo_busqueda,
         'estados': Pedido.ESTADOS,
         'repartidores': repartidores,
     }

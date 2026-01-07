@@ -5,32 +5,28 @@
 {% block page_title %}Mis Entregas Asignadas{% endblock %}
 
 {% block content %}
-<!-- Mensaje informativo -->
-<div class="alert alert-info mb-3">
-    <i class="bi bi-info-circle"></i> <strong>Instrucciones:</strong> Toma un pedido listo marcándolo "En Ruta". Una vez en ruta, marca si fue "Entregado" o "No Entregado". Los pedidos en ruta son exclusivos para ti.
-</div>
 
-<!-- Filtros de Ordenamiento -->
+<!-- Filtro de búsqueda por código -->
 <div class="card mb-3">
     <div class="card-body">
-        <div class="row align-items-center">
+        <form method="get" class="row align-items-center">
             <div class="col-md-3">
-                <label class="form-label">Ordenar por:</label>
+                <label class="form-label">Buscar por código:</label>
             </div>
             <div class="col-md-9">
-                <div class="btn-group" role="group">
-                    <a href="?ordenar=fecha" class="btn btn-sm {% if ordenar == 'fecha' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                        <i class="bi bi-calendar"></i> Fecha
-                    </a>
-                    <a href="?ordenar=estado" class="btn btn-sm {% if ordenar == 'estado' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                        <i class="bi bi-list-check"></i> Prioridad
-                    </a>
-                    <a href="?ordenar=total" class="btn btn-sm {% if ordenar == 'total' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                        <i class="bi bi-cash"></i> Monto
-                    </a>
+                <div class="input-group">
+                    <input type="text" name="codigo" class="form-control" placeholder="Ingrese código del pedido" value="{{ codigo_busqueda }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                    {% if codigo_busqueda %}
+                        <a href="{% url 'admin_mis_entregas' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Limpiar
+                        </a>
+                    {% endif %}
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
